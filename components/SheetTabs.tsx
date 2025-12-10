@@ -98,10 +98,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
               className={`
                 group flex items-center px-4 py-1.5 text-xs font-medium transition-all flex-shrink-0
                 min-w-[100px] justify-center relative cursor-pointer
-                rounded-t-md
+                rounded-t-md border-t-2
                 ${isActive 
-                  ? 'bg-white text-emerald-700 shadow-soft border-t-2 border-t-emerald-500' 
-                  : 'bg-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                  ? 'bg-white text-emerald-700 shadow-soft border-t-emerald-500' 
+                  : 'bg-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800 border-t-transparent'
                 }
               `}
             >

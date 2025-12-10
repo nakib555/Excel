@@ -69,3 +69,16 @@ export const getRange = (start: CellId, end: CellId): CellId[] => {
   }
   return range;
 };
+
+/**
+ * Calculates the next cell ID based on a direction vector
+ */
+export const getNextCellId = (currentId: string, dRow: number, dCol: number, maxRows: number, maxCols: number): string => {
+  const coords = parseCellId(currentId);
+  if (!coords) return currentId;
+  
+  const newRow = Math.max(0, Math.min(maxRows - 1, coords.row + dRow));
+  const newCol = Math.max(0, Math.min(maxCols - 1, coords.col + dCol));
+  
+  return getCellId(newCol, newRow);
+};

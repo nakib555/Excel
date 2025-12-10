@@ -1,6 +1,8 @@
 import React, { memo, useState, useRef, useEffect } from 'react';
 import { CellData } from '../types';
 
+export type NavigationDirection = 'up' | 'down' | 'left' | 'right' | 'none';
+
 interface CellProps {
   id: string;
   data: CellData;
@@ -9,9 +11,11 @@ interface CellProps {
   isInRange: boolean;
   width: number;
   height: number;
+  scale?: number;
   onClick: (id: string, isShift: boolean) => void;
   onDoubleClick: (id: string) => void;
   onChange: (id: string, value: string) => void;
+  onNavigate: (direction: NavigationDirection) => void;
 }
 
 const Cell = memo(({ 
@@ -22,9 +26,11 @@ const Cell = memo(({
   isInRange,
   width, 
   height, 
+  scale = 1,
   onClick, 
   onDoubleClick, 
-  onChange 
+  onChange,
+  onNavigate
 }: CellProps) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.raw);
@@ -61,9 +67,18 @@ const Cell = memo(({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleBlur();
+      onNavigate(e.shiftKey ? 'up' : 'down');
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      handleBlur();
+      onNavigate(e.shiftKey ? 'left' : 'right');
     }
   };
+
+  const baseFontSize = data.style.fontSize || 13;
+  const scaledFontSize = Math.max(8, baseFontSize * scale); // Min font size legibility
 
   const style: React.CSSProperties = {
     fontWeight: data.style.bold ? '600' : '400',
@@ -76,13 +91,13 @@ const Cell = memo(({
     height: height,
     minWidth: width,
     minHeight: height,
-    fontSize: (data.style.fontSize || 13) + 'px',
+    fontSize: `${scaledFontSize}px`,
   };
 
   return (
     <div
       className={`
-        relative box-border flex items-center px-1.5 overflow-hidden select-none outline-none flex-shrink-0
+        relative box-border flex items-center px-[4px] overflow-hidden select-none outline-none flex-shrink-0
         border-r border-b border-slate-200
         ${!isSelected && !isInRange ? '' : ''}
       `}
@@ -94,12 +109,14 @@ const Cell = memo(({
         <input
           ref={inputRef}
           type="text"
-          className="absolute inset-0 w-full h-full px-1.5 outline-none z-50 bg-white text-slate-900 shadow-elevation"
+          className="absolute inset-0 w-full h-full px-[4px] outline-none z-50 bg-white text-slate-900 shadow-elevation"
           style={{ 
             fontFamily: 'inherit',
             fontWeight: data.style.bold ? '600' : '400',
             fontStyle: data.style.italic ? 'italic' : 'normal',
-            fontSize: 'max(16px, 13px)', // Mobile zoom prevention
+            fontSize: `${scaledFontSize}px`, 
+            paddingTop: 0,
+            paddingBottom: 0
           }}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
@@ -128,7 +145,8 @@ const Cell = memo(({
     prev.isActive === next.isActive &&
     prev.isInRange === next.isInRange &&
     prev.width === next.width &&
-    prev.height === next.height
+    prev.height === next.height &&
+    prev.scale === next.scale
   );
 });
 

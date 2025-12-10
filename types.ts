@@ -1,3 +1,4 @@
+
 export type CellId = string; // e.g., "A1", "B2"
 
 export interface CellStyle {
@@ -32,6 +33,8 @@ export interface Sheet {
   cells: Record<CellId, CellData>;
   activeCell: CellId | null;
   selectionRange: CellId[] | null;
+  columnWidths: Record<string, number>;
+  rowHeights: Record<number, number>;
 }
 
 export type GridSize = {

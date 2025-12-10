@@ -1,12 +1,14 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import Toolbar from './components/Toolbar';
 import FormulaBar from './components/FormulaBar';
 import Grid from './components/Grid';
 import SheetTabs from './components/SheetTabs';
+import StatusBar from './components/StatusBar';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
 import { evaluateFormula } from './utils/evaluator';
-import { getRange } from './utils/helpers';
-import { Layout, Monitor } from 'lucide-react';
+import { getRange, getNextCellId } from './utils/helpers';
+import { NavigationDirection } from './components/Cell';
 
 // Initial Configuration
 const INITIAL_ROWS = 50;
@@ -52,11 +54,14 @@ const App: React.FC = () => {
       name: 'Budget 2024',
       cells: generateInitialData(),
       activeCell: "A1",
-      selectionRange: ["A1"]
+      selectionRange: ["A1"],
+      columnWidths: {},
+      rowHeights: {}
     }
   ]);
   const [activeSheetId, setActiveSheetId] = useState<string>('sheet1');
   const [gridSize] = useState<GridSize>({ rows: INITIAL_ROWS, cols: INITIAL_COLS });
+  const [zoom, setZoom] = useState<number>(1);
   
   const activeSheet = useMemo(() => 
     sheets.find(s => s.id === activeSheetId) || sheets[0], 
@@ -65,6 +70,8 @@ const App: React.FC = () => {
   const cells = activeSheet.cells;
   const activeCell = activeSheet.activeCell;
   const selectionRange = activeSheet.selectionRange;
+  const columnWidths = activeSheet.columnWidths;
+  const rowHeights = activeSheet.rowHeights;
 
   const activeStyle: CellStyle = useMemo(() => {
     if (!activeCell || !cells[activeCell]) return {};
@@ -126,6 +133,46 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
+  const handleNavigate = useCallback((direction: NavigationDirection) => {
+    if (!activeCell) return;
+    
+    let dRow = 0;
+    let dCol = 0;
+    
+    switch (direction) {
+        case 'up': dRow = -1; break;
+        case 'down': dRow = 1; break;
+        case 'left': dCol = -1; break;
+        case 'right': dCol = 1; break;
+        default: return;
+    }
+
+    const nextId = getNextCellId(activeCell, dRow, dCol, gridSize.rows, gridSize.cols);
+    if (nextId && nextId !== activeCell) {
+        handleCellClick(nextId, false);
+    }
+  }, [activeCell, gridSize, handleCellClick]);
+
+  const handleColumnResize = useCallback((colId: string, width: number) => {
+    setSheets(prev => prev.map(s => {
+      if (s.id !== activeSheetId) return s;
+      return { 
+        ...s, 
+        columnWidths: { ...s.columnWidths, [colId]: width } 
+      };
+    }));
+  }, [activeSheetId]);
+
+  const handleRowResize = useCallback((rowIdx: number, height: number) => {
+    setSheets(prev => prev.map(s => {
+      if (s.id !== activeSheetId) return s;
+      return { 
+        ...s, 
+        rowHeights: { ...s.rowHeights, [rowIdx]: height } 
+      };
+    }));
+  }, [activeSheetId]);
+
   const handleExport = () => {
     const rows = [];
     for(let r=0; r<Math.min(gridSize.rows, 50); r++) { 
@@ -155,7 +202,7 @@ const App: React.FC = () => {
     if (confirm(`Are you sure you want to clear the entire "${activeSheet.name}"?`)) {
         setSheets(prev => prev.map(s => {
           if (s.id !== activeSheetId) return s;
-          return { ...s, cells: {}, activeCell: 'A1', selectionRange: ['A1'] };
+          return { ...s, cells: {}, activeCell: 'A1', selectionRange: ['A1'], columnWidths: {}, rowHeights: {} };
         }));
     }
   };
@@ -168,7 +215,9 @@ const App: React.FC = () => {
       name: `Sheet ${num}`,
       cells: {},
       activeCell: 'A1',
-      selectionRange: ['A1']
+      selectionRange: ['A1'],
+      columnWidths: {},
+      rowHeights: {}
     };
     setSheets([...sheets, newSheet]);
     setActiveSheetId(newId);
@@ -197,11 +246,15 @@ const App: React.FC = () => {
           cells={cells}
           activeCell={activeCell}
           selectionRange={selectionRange}
-          columnWidths={{}}
-          rowHeights={{}} 
+          columnWidths={columnWidths}
+          rowHeights={rowHeights} 
+          scale={zoom}
           onCellClick={handleCellClick}
           onCellDoubleClick={(id) => handleCellClick(id, false)}
           onCellChange={handleCellChange}
+          onNavigate={handleNavigate}
+          onColumnResize={handleColumnResize}
+          onRowResize={handleRowResize}
         />
       </div>
 
@@ -212,28 +265,11 @@ const App: React.FC = () => {
         onAdd={handleAddSheet}
       />
       
-      {/* Footer Status Bar - Modernized */}
-      <div className="h-7 bg-emerald-700 text-white flex items-center justify-between px-3 text-[11px] select-none shadow-[0_-1px_2px_rgba(0,0,0,0.1)] z-50">
-        <div className="flex items-center gap-4">
-            <span className="font-semibold opacity-90">Ready</span>
-            {selectionRange && selectionRange.length > 1 && (
-                <span className="opacity-80 border-l border-white/20 pl-4">
-                    {selectionRange.length} cells selected
-                </span>
-            )}
-        </div>
-        <div className="flex items-center gap-4 opacity-90">
-             <div className="flex items-center gap-1 cursor-pointer hover:bg-white/10 px-1 rounded">
-                <Layout size={12} />
-                <span className="hidden sm:inline">Normal View</span>
-             </div>
-             <div className="w-[1px] h-3 bg-white/20"></div>
-             <span>100%</span>
-             <div className="w-20 h-1 bg-white/20 rounded-full relative ml-1">
-                 <div className="absolute left-1/2 -top-1 w-3 h-3 bg-white rounded-full shadow-sm -ml-1.5 cursor-pointer hover:scale-110 transition-transform"></div>
-             </div>
-        </div>
-      </div>
+      <StatusBar 
+        selectionCount={selectionRange?.length || 0}
+        zoom={zoom}
+        onZoomChange={setZoom}
+      />
     </div>
   );
 };
