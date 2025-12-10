@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, 
   Download, Trash2, Undo, Redo, 
@@ -29,6 +29,68 @@ interface ToolbarProps {
 }
 
 // --- Components ---
+
+const DraggableScrollContainer = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!ref.current) return;
+    setIsDown(true);
+    setIsDragging(false);
+    setStartX(e.pageX - ref.current.offsetLeft);
+    setScrollLeft(ref.current.scrollLeft);
+  };
+
+  const onMouseLeave = () => {
+    setIsDown(false);
+    setIsDragging(false);
+  };
+
+  const onMouseUp = () => {
+    setIsDown(false);
+    // Short timeout to allow click event to be captured/prevented if needed
+    setTimeout(() => setIsDragging(false), 50);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDown || !ref.current) return;
+    e.preventDefault();
+    const x = e.pageX - ref.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // Scroll speed multiplier
+    
+    // Only register as a drag if moved more than 5px
+    if (Math.abs(walk) > 5 && !isDragging) {
+        setIsDragging(true);
+    }
+    ref.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const onClickCapture = (e: React.MouseEvent) => {
+      // Prevent click events (e.g. changing tabs) if we are dragging
+      if (isDragging) {
+          e.preventDefault();
+          e.stopPropagation();
+      }
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={`overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing ${className}`}
+      onMouseDown={onMouseDown}
+      onMouseLeave={onMouseLeave}
+      onMouseUp={onMouseUp}
+      onMouseMove={onMouseMove}
+      onClickCapture={onClickCapture}
+    >
+      {children}
+    </div>
+  );
+};
 
 const RibbonGroup: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className = "" }) => (
   <div className={`flex flex-col h-full px-1.5 md:px-2 border-r border-slate-200 last:border-r-0 flex-shrink-0 ${className}`}>
@@ -174,7 +236,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ currentStyle, onToggleStyle, onExport
       </div>
 
       {/* 2. Tab Navigation */}
-      <div className="flex items-center px-2 md:px-4 bg-white border-b border-slate-200 overflow-x-auto">
+      <DraggableScrollContainer className="flex items-center px-2 md:px-4 bg-white border-b border-slate-200">
          {TABS.map(tab => (
             <button
                 key={tab}
@@ -196,10 +258,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ currentStyle, onToggleStyle, onExport
                 )}
             </button>
          ))}
-      </div>
+      </DraggableScrollContainer>
 
       {/* 3. The Ribbon */}
-      <div className="h-[100px] md:h-28 bg-slate-50/50 flex items-start px-2 md:px-4 py-1.5 overflow-x-auto w-full shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
+      <DraggableScrollContainer className="h-[100px] md:h-28 bg-slate-50/50 flex items-start px-2 md:px-4 py-1.5 w-full shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
           <AnimatePresence mode='wait'>
             {activeTab === 'Home' && (
                 <motion.div 
@@ -401,7 +463,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ currentStyle, onToggleStyle, onExport
                 </motion.div>
             )}
           </AnimatePresence>
-      </div>
+      </DraggableScrollContainer>
     </div>
   );
 };
