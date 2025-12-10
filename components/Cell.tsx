@@ -1,4 +1,3 @@
-
 import React, { memo, useState, useRef, useEffect } from 'react';
 import { CellData } from '../types';
 
@@ -107,19 +106,9 @@ const Cell = memo(({
           onKeyDown={handleKeyDown}
         />
       ) : (
-        data.image ? (
-          <div className="w-full h-full flex items-center justify-center pointer-events-none p-0.5">
-            <img 
-              src={data.image} 
-              alt={data.value || "Cell image"} 
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-        ) : (
-          <span className="w-full truncate pointer-events-none">
-              {data.value}
-          </span>
-        )
+        <span className="w-full truncate pointer-events-none">
+            {data.value}
+        </span>
       )}
 
       {/* Selection Highlight Overlay */}

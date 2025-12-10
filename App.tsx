@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import Toolbar from './components/Toolbar';
 import FormulaBar from './components/FormulaBar';
@@ -7,7 +6,6 @@ import SheetTabs from './components/SheetTabs';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
 import { evaluateFormula } from './utils/evaluator';
 import { getRange } from './utils/helpers';
-import { GoogleGenAI } from "@google/genai";
 
 // Initial Configuration
 const INITIAL_ROWS = 50;
@@ -72,7 +70,7 @@ const App: React.FC = () => {
     return cells[activeCell].style;
   }, [activeCell, cells]);
 
-  const handleCellChange = useCallback((id: CellId, rawValue: string, imageUrl?: string) => {
+  const handleCellChange = useCallback((id: CellId, rawValue: string) => {
     setSheets(prevSheets => prevSheets.map(sheet => {
       if (sheet.id !== activeSheetId) return sheet;
 
@@ -80,8 +78,7 @@ const App: React.FC = () => {
       nextCells[id] = {
         ...nextCells[id] || { id, style: {} },
         raw: rawValue,
-        value: rawValue,
-        image: imageUrl // Update image property
+        value: rawValue
       };
 
       const keys = Object.keys(nextCells);
@@ -176,45 +173,6 @@ const App: React.FC = () => {
     setActiveSheetId(newId);
   };
 
-  const handleGenerateImage = async (prompt: string) => {
-    if (!activeCell) {
-        alert("Please select a cell first.");
-        return;
-    }
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: prompt }]
-            },
-        });
-
-        // Find image part
-        let base64Image = null;
-        if (response.candidates?.[0]?.content?.parts) {
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    base64Image = part.inlineData.data;
-                    break;
-                }
-            }
-        }
-
-        if (base64Image) {
-            const imageUri = `data:image/png;base64,${base64Image}`;
-            // Set cell value to empty string but add image
-            handleCellChange(activeCell, '', imageUri);
-        } else {
-            console.warn("No image found in response", response);
-            alert("No image generated. Please try again.");
-        }
-    } catch (error) {
-        console.error("Image generation failed:", error);
-        alert("Failed to generate image. Please check API Key or try again.");
-    }
-  };
-
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
       <Toolbar 
@@ -223,7 +181,6 @@ const App: React.FC = () => {
         onExport={handleExport}
         onClear={handleClear}
         onResetLayout={() => {}}
-        onGenerateImage={handleGenerateImage}
       />
       
       <FormulaBar 
