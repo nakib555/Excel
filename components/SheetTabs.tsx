@@ -29,7 +29,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
       {/* Tabs Container */}
       <div 
         ref={scrollRef}
-        className="flex-1 flex overflow-x-auto no-scrollbar gap-1.5 md:gap-1 items-center"
+        className="flex-1 flex overflow-x-auto gap-1.5 md:gap-1 items-center"
       >
         {sheets.map((sheet) => {
           const isActive = sheet.id === activeSheetId;
