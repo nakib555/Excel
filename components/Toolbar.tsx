@@ -1,21 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { 
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, 
-  Download, Trash2, Undo, Redo, 
+  Download, Undo, Redo, 
   ChevronDown, Palette, FileSpreadsheet, 
   Clipboard, Scissors, Copy, Paintbrush,
   AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd,
   WrapText, Merge, 
-  DollarSign, Percent, Hash, MoveLeft, MoveRight,
+  DollarSign, Percent, MoveLeft, MoveRight,
   Table, LayoutList, 
   Plus, X, Eraser, 
   Sigma, ArrowUpDown, Search,
   Grid3X3, Type,
   PaintBucket,
-  MousePointer2,
-  ListFilter,
   Layout,
-  Printer
+  Printer,
+  // New icons for Insert Tab
+  Table2, TableProperties, FormInput, Image as ImageIcon, CheckSquare, 
+  BarChart, BarChart3, LineChart, PieChart, ScatterChart, 
+  Map, BarChart4, Activity, BarChart2, Filter, History, 
+  Link2, MessageSquare, BoxSelect, TrendingUp
 } from 'lucide-react';
 import { CellStyle } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -134,6 +137,7 @@ const RibbonButton: React.FC<RibbonButtonProps> = ({
         <div className="p-1">{icon}</div>
         <div className="text-[10px] md:text-[11px] font-medium leading-none text-center flex flex-col items-center">
             {label}
+            {subLabel && <span>{subLabel}</span>}
             {hasDropdown && <ChevronDown size={10} className="mt-0.5 opacity-50" />}
         </div>
       </button>
@@ -454,8 +458,86 @@ const Toolbar: React.FC<ToolbarProps> = ({ currentStyle, onToggleStyle, onExport
                 </motion.div>
             )}
 
+            {activeTab === 'Insert' && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full min-w-max"
+                >
+                    {/* Tables */}
+                    <RibbonGroup label="Tables">
+                        <RibbonButton variant="large" icon={<Table2 size={22} />} label="PivotTable" hasDropdown onClick={() => {}} />
+                        <RibbonButton variant="large" icon={<TableProperties size={22} className="text-blue-600" />} label="Recommended" subLabel="Pivots" onClick={() => {}} />
+                        <RibbonButton variant="large" icon={<Table size={22} />} label="Table" onClick={() => {}} />
+                        <RibbonButton variant="large" icon={<FormInput size={22} className="text-teal-600" />} label="Forms" hasDropdown onClick={() => {}} />
+                    </RibbonGroup>
+
+                    {/* Illustrations & Controls */}
+                    <RibbonGroup label="Illustrations">
+                         <div className="flex gap-1 h-full items-center">
+                             <RibbonButton variant="large" icon={<ImageIcon size={22} className="text-purple-600" />} label="Illustrations" hasDropdown onClick={() => {}} />
+                             <RibbonButton variant="large" icon={<CheckSquare size={22} />} label="Checkbox" onClick={() => {}} />
+                         </div>
+                    </RibbonGroup>
+
+                    {/* Charts */}
+                    <RibbonGroup label="Charts">
+                        <div className="flex gap-2 h-full items-center">
+                             <RibbonButton variant="large" icon={<BarChart size={22} />} label="Recommended" subLabel="Charts" onClick={() => {}} />
+                             
+                             <div className="flex flex-col gap-0.5 h-full justify-center">
+                                 <div className="flex gap-0.5">
+                                     <RibbonButton variant="icon-only" icon={<BarChart3 size={15} />} hasDropdown onClick={() => {}} title="Column" />
+                                     <RibbonButton variant="icon-only" icon={<LineChart size={15} />} hasDropdown onClick={() => {}} title="Line" />
+                                     <RibbonButton variant="icon-only" icon={<PieChart size={15} />} hasDropdown onClick={() => {}} title="Pie" />
+                                 </div>
+                                 <div className="flex gap-0.5">
+                                     <RibbonButton variant="icon-only" icon={<ScatterChart size={15} />} hasDropdown onClick={() => {}} title="Scatter" />
+                                     <RibbonButton variant="icon-only" icon={<Map size={15} />} hasDropdown onClick={() => {}} title="Maps" />
+                                     <RibbonButton variant="icon-only" icon={<BarChart4 size={15} />} hasDropdown onClick={() => {}} title="PivotChart" />
+                                 </div>
+                             </div>
+                        </div>
+                    </RibbonGroup>
+
+                    {/* Sparklines */}
+                    <RibbonGroup label="Sparklines">
+                         <div className="flex flex-col gap-0.5 h-full justify-center">
+                             <RibbonButton variant="small" icon={<Activity size={14} />} label="Line" onClick={() => {}} />
+                             <RibbonButton variant="small" icon={<BarChart2 size={14} />} label="Column" onClick={() => {}} />
+                             <RibbonButton variant="small" icon={<TrendingUp size={14} />} label="Win/Loss" onClick={() => {}} />
+                         </div>
+                    </RibbonGroup>
+                    
+                    {/* Filters */}
+                    <RibbonGroup label="Filters">
+                         <div className="flex flex-col gap-0.5 h-full justify-center">
+                             <RibbonButton variant="small" icon={<Filter size={14} />} label="Slicer" onClick={() => {}} />
+                             <RibbonButton variant="small" icon={<History size={14} />} label="Timeline" onClick={() => {}} />
+                         </div>
+                    </RibbonGroup>
+
+                    {/* Links & Comments */}
+                    <RibbonGroup label="Links & Comments">
+                        <div className="flex gap-1 h-full items-center">
+                           <RibbonButton variant="large" icon={<Link2 size={22} />} label="Link" hasDropdown onClick={() => {}} />
+                           <RibbonButton variant="large" icon={<MessageSquare size={22} />} label="Comment" onClick={() => {}} />
+                        </div>
+                    </RibbonGroup>
+
+                    {/* Text & Symbols */}
+                    <RibbonGroup label="Text & Symbols" className="border-r-0">
+                        <div className="flex gap-1 h-full items-center">
+                           <RibbonButton variant="large" icon={<BoxSelect size={22} />} label="Text" hasDropdown onClick={() => {}} />
+                           <RibbonButton variant="large" icon={<Sigma size={22} />} label="Symbols" hasDropdown onClick={() => {}} />
+                        </div>
+                    </RibbonGroup>
+                </motion.div>
+            )}
+
             {/* Placeholder for other tabs */}
-            {activeTab !== 'Home' && (
+            {activeTab !== 'Home' && activeTab !== 'Insert' && (
                  <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
