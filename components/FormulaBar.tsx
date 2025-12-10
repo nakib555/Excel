@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import { FunctionSquare, X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -73,4 +73,4 @@ const FormulaBar: React.FC<FormulaBarProps> = ({ value, onChange, onSubmit, sele
   );
 };
 
-export default FormulaBar;
+export default memo(FormulaBar);

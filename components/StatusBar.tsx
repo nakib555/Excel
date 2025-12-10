@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   CheckCircle2,
   Grid3X3,
@@ -105,4 +105,4 @@ const StatusBar: React.FC<StatusBarProps> = ({ selectionCount, zoom, onZoomChang
   );
 };
 
-export default StatusBar;
+export default memo(StatusBar);

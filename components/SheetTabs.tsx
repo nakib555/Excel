@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, memo } from 'react';
 import { Plus, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Sheet } from '../types';
 import { motion } from 'framer-motion';
@@ -136,4 +136,4 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
   );
 };
 
-export default SheetTabs;
+export default memo(SheetTabs);

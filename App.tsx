@@ -1,14 +1,16 @@
-
-import React, { useState, useCallback, useMemo } from 'react';
-import Toolbar from './components/Toolbar';
-import FormulaBar from './components/FormulaBar';
-import Grid from './components/Grid';
-import SheetTabs from './components/SheetTabs';
-import StatusBar from './components/StatusBar';
+import React, { useState, useCallback, useMemo, Suspense } from 'react';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
 import { evaluateFormula } from './utils/evaluator';
 import { getRange, getNextCellId } from './utils/helpers';
 import { NavigationDirection } from './components/Cell';
+import { Loader2 } from 'lucide-react';
+
+// Lazy Load Components
+const Toolbar = React.lazy(() => import('./components/Toolbar'));
+const FormulaBar = React.lazy(() => import('./components/FormulaBar'));
+const Grid = React.lazy(() => import('./components/Grid'));
+const SheetTabs = React.lazy(() => import('./components/SheetTabs'));
+const StatusBar = React.lazy(() => import('./components/StatusBar'));
 
 // Initial Configuration
 const INITIAL_ROWS = 50;
@@ -46,6 +48,21 @@ const generateInitialData = (): Record<CellId, CellData> => {
     
     return evaluated;
 };
+
+const LoadingFallback = () => (
+  <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-50 gap-4">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Loader2 size={24} className="text-emerald-600 animate-pulse" />
+      </div>
+    </div>
+    <div className="flex flex-col items-center gap-1">
+      <h2 className="text-lg font-semibold text-slate-700">Loading Spreadsheet</h2>
+      <p className="text-sm text-slate-400">Preparing your cells...</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [sheets, setSheets] = useState<Sheet[]>([
@@ -116,6 +133,11 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
+  // Stable wrapper for double click to prevent implicit function creation in render
+  const handleCellDoubleClick = useCallback((id: CellId) => {
+    handleCellClick(id, false);
+  }, [handleCellClick]);
+
   const handleStyleChange = useCallback((key: keyof CellStyle, value: any) => {
     setSheets(prevSheets => prevSheets.map(sheet => {
       if (sheet.id !== activeSheetId || !sheet.selectionRange) return sheet;
@@ -173,7 +195,7 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     const rows = [];
     for(let r=0; r<Math.min(gridSize.rows, 50); r++) { 
         const row = [];
@@ -196,18 +218,18 @@ const App: React.FC = () => {
     a.href = url;
     a.download = `${activeSheet.name}.csv`;
     a.click();
-  };
+  }, [cells, gridSize, activeSheet.name]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     if (confirm(`Are you sure you want to clear the entire "${activeSheet.name}"?`)) {
         setSheets(prev => prev.map(s => {
           if (s.id !== activeSheetId) return s;
           return { ...s, cells: {}, activeCell: 'A1', selectionRange: ['A1'], columnWidths: {}, rowHeights: {} };
         }));
     }
-  };
+  }, [activeSheet.name, activeSheetId]);
 
-  const handleAddSheet = () => {
+  const handleAddSheet = useCallback(() => {
     const newId = `sheet${Date.now()}`;
     const num = sheets.length + 1;
     const newSheet: Sheet = {
@@ -219,57 +241,71 @@ const App: React.FC = () => {
       columnWidths: {},
       rowHeights: {}
     };
-    setSheets([...sheets, newSheet]);
+    setSheets(prev => [...prev, newSheet]);
     setActiveSheetId(newId);
-  };
+  }, [sheets.length]);
+
+  const handleResetLayout = useCallback(() => {
+    console.log("Reset Layout");
+  }, []);
+
+  const handleFormulaSubmit = useCallback(() => {
+    console.log("Formula Submitted");
+  }, []);
+
+  const handleFormulaChange = useCallback((val: string) => {
+    if (activeCell) handleCellChange(activeCell, val);
+  }, [activeCell, handleCellChange]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      <Toolbar 
-        currentStyle={activeStyle}
-        onToggleStyle={handleStyleChange}
-        onExport={handleExport}
-        onClear={handleClear}
-        onResetLayout={() => {}}
-      />
-      
-      <FormulaBar 
-        selectedCell={activeCell}
-        value={activeCell ? (cells[activeCell]?.raw || '') : ''}
-        onChange={(val) => activeCell && handleCellChange(activeCell, val)}
-        onSubmit={() => {}}
-      />
-      
-      <div className="flex-1 overflow-hidden relative flex flex-col z-0">
-        <Grid 
-          size={gridSize}
-          cells={cells}
-          activeCell={activeCell}
-          selectionRange={selectionRange}
-          columnWidths={columnWidths}
-          rowHeights={rowHeights} 
-          scale={zoom}
-          onCellClick={handleCellClick}
-          onCellDoubleClick={(id) => handleCellClick(id, false)}
-          onCellChange={handleCellChange}
-          onNavigate={handleNavigate}
-          onColumnResize={handleColumnResize}
-          onRowResize={handleRowResize}
+      <Suspense fallback={<LoadingFallback />}>
+        <Toolbar 
+          currentStyle={activeStyle}
+          onToggleStyle={handleStyleChange}
+          onExport={handleExport}
+          onClear={handleClear}
+          onResetLayout={handleResetLayout}
         />
-      </div>
+        
+        <FormulaBar 
+          selectedCell={activeCell}
+          value={activeCell ? (cells[activeCell]?.raw || '') : ''}
+          onChange={handleFormulaChange}
+          onSubmit={handleFormulaSubmit}
+        />
+        
+        <div className="flex-1 overflow-hidden relative flex flex-col z-0">
+          <Grid 
+            size={gridSize}
+            cells={cells}
+            activeCell={activeCell}
+            selectionRange={selectionRange}
+            columnWidths={columnWidths}
+            rowHeights={rowHeights} 
+            scale={zoom}
+            onCellClick={handleCellClick}
+            onCellDoubleClick={handleCellDoubleClick}
+            onCellChange={handleCellChange}
+            onNavigate={handleNavigate}
+            onColumnResize={handleColumnResize}
+            onRowResize={handleRowResize}
+          />
+        </div>
 
-      <SheetTabs 
-        sheets={sheets}
-        activeSheetId={activeSheetId}
-        onSwitch={setActiveSheetId}
-        onAdd={handleAddSheet}
-      />
-      
-      <StatusBar 
-        selectionCount={selectionRange?.length || 0}
-        zoom={zoom}
-        onZoomChange={setZoom}
-      />
+        <SheetTabs 
+          sheets={sheets}
+          activeSheetId={activeSheetId}
+          onSwitch={setActiveSheetId}
+          onAdd={handleAddSheet}
+        />
+        
+        <StatusBar 
+          selectionCount={selectionRange?.length || 0}
+          zoom={zoom}
+          onZoomChange={setZoom}
+        />
+      </Suspense>
     </div>
   );
 };

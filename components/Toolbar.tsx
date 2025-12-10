@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { 
   // Common & Home
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, 
@@ -1016,4 +1016,4 @@ const Toolbar: React.FC<ToolbarProps> = ({ currentStyle, onToggleStyle, onExport
   );
 };
 
-export default Toolbar;
+export default memo(Toolbar);

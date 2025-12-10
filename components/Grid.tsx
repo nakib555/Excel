@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import Cell, { NavigationDirection } from './Cell';
 import { CellId, CellData, GridSize } from '../types';
 import { numToChar, getCellId } from '../utils/helpers';
@@ -252,4 +251,4 @@ const Grid: React.FC<GridProps> = ({
   );
 };
 
-export default Grid;
+export default memo(Grid);
