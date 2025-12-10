@@ -86,11 +86,11 @@ export const DraggableScrollContainer = ({ children, className = "" }: { childre
 };
 
 export const RibbonGroup: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className = "" }) => (
-  <div className={`flex flex-col h-full px-2 md:px-3 border-r border-slate-200 last:border-r-0 flex-shrink-0 items-center ${className}`}>
-    <div className="flex-1 flex gap-1 items-center justify-center content-center">
+  <div className={`flex flex-col h-full px-1.5 border-r border-slate-200 last:border-r-0 flex-shrink-0 ${className}`}>
+    <div className="flex-1 flex gap-1 items-center justify-center min-h-0">
        {children}
     </div>
-    <div className="h-[18px] flex items-center justify-center text-[10px] text-slate-400 font-medium whitespace-nowrap pb-0.5">{label}</div>
+    <div className="h-[18px] flex items-center justify-center text-[10px] text-slate-400 font-medium whitespace-nowrap pb-1">{label}</div>
   </div>
 );
 
@@ -116,12 +116,12 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200'
   } ${disabled ? 'opacity-40 cursor-default pointer-events-none' : 'cursor-pointer'} ${className}`;
 
-  // Icon sizing logic to fit 100px toolbar better
+  // Icon sizing logic optimized for 100px toolbar
   const getIconConfig = () => {
     switch(variant) {
-      case 'large': return { size: 26, strokeWidth: 1.5 }; // Increased from 20 for better visibility
-      case 'small': return { size: 16, strokeWidth: 2 };
-      case 'icon-only': return { size: 18, strokeWidth: 2 }; // Increased from 14/16
+      case 'large': return { size: 24, strokeWidth: 1.5 }; // Reduced slightly to fit
+      case 'small': return { size: 14, strokeWidth: 2 };
+      case 'icon-only': return { size: 16, strokeWidth: 2 };
       default: return { size: 16, strokeWidth: 2 };
     }
   }
@@ -134,9 +134,9 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
 
   if (variant === 'large') {
     return (
-      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-col px-1.5 py-1 h-full min-w-[52px] md:min-w-[64px] gap-1`}>
-        <div className="p-1.5">{styledIcon}</div>
-        <div className="text-[11px] font-medium leading-tight text-center flex flex-col items-center text-slate-700">
+      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-col px-1 py-1 h-full min-w-[52px] md:min-w-[60px] gap-0.5 justify-center`}>
+        <div className="p-1">{styledIcon}</div>
+        <div className="text-[11px] font-medium leading-[1.1] text-center flex flex-col items-center text-slate-700">
             {label}
             {subLabel && <span>{subLabel}</span>}
             {hasDropdown && <ChevronDown size={10} className="mt-0.5 opacity-50 stroke-[3]" />}
@@ -147,9 +147,9 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
 
   if (variant === 'small') {
     return (
-      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-row px-2 py-1 w-full justify-start gap-2.5 text-left`}>
-        <div className="transform flex-shrink-0 text-slate-700">{styledIcon}</div>
-        {label && <span className="text-[12px] text-slate-700 font-medium whitespace-nowrap">{label}</span>}
+      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-row px-1.5 py-0.5 w-full justify-start gap-2 text-left h-6`}>
+        <div className="transform flex-shrink-0 text-slate-700 flex items-center">{styledIcon}</div>
+        {label && <span className="text-[12px] text-slate-700 font-medium whitespace-nowrap leading-none pt-0.5">{label}</span>}
         {hasDropdown && <ChevronDown size={10} className="ml-auto opacity-50 stroke-[3]" />}
       </button>
     );
@@ -157,7 +157,7 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
 
   // Icon only
   return (
-    <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} p-1 w-8 h-8 relative`}>
+    <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} p-1 w-7 h-7 relative`}>
       {styledIcon}
       {hasDropdown && <ChevronDown size={8} className="absolute bottom-0.5 right-0.5 opacity-60 stroke-[3]" />}
     </button>
@@ -211,4 +211,4 @@ export const ColorPicker: React.FC<{
     )
 }
 
-export const Separator = () => <div className="h-3/5 w-[1px] bg-slate-200 mx-1.5 flex-shrink-0 my-auto" />;
+export const Separator = () => <div className="h-4/5 w-[1px] bg-slate-200 mx-1 flex-shrink-0 my-auto" />;
