@@ -40,11 +40,11 @@ const HomeTab: React.FC<TabProps> = ({ currentStyle, onToggleStyle, onClear }) =
         <RibbonGroup label="Font" className="px-3">
             <div className="flex flex-col gap-1 justify-center h-full py-0.5">
                 <div className="flex items-center gap-1.5">
-                    <div className="w-28 md:w-32 h-6 bg-white border border-slate-300 hover:border-slate-400 rounded flex items-center justify-between px-2 text-xs text-slate-700 shadow-sm cursor-pointer transition-colors">
+                    <div className="w-32 h-7 bg-white border border-slate-300 hover:border-slate-400 rounded flex items-center justify-between px-2 text-xs text-slate-700 shadow-sm cursor-pointer transition-colors">
                         <span className="truncate">Inter</span>
                         <ChevronDown size={12} className="opacity-50 flex-shrink-0" />
                     </div>
-                    <div className="w-10 h-6 bg-white border border-slate-300 hover:border-slate-400 rounded flex items-center justify-center text-xs text-slate-700 shadow-sm cursor-pointer group relative transition-colors">
+                    <div className="w-12 h-7 bg-white border border-slate-300 hover:border-slate-400 rounded flex items-center justify-center text-xs text-slate-700 shadow-sm cursor-pointer group relative transition-colors">
                         <span>{currentFontSize}</span>
                         <div className="absolute top-full left-0 w-12 bg-white border border-slate-200 shadow-lg hidden group-hover:block z-50 max-h-48 overflow-y-auto rounded-md mt-1">
                             {FONT_SIZES.map(s => (
@@ -58,9 +58,9 @@ const HomeTab: React.FC<TabProps> = ({ currentStyle, onToggleStyle, onClear }) =
                             ))}
                         </div>
                     </div>
-                    <div className="flex items-center ml-0.5 bg-slate-200/50 rounded p-0.5 border border-slate-200">
-                        <RibbonButton variant="icon-only" icon={<span className="font-serif text-sm relative top-[1px]">A<span className="align-super text-[8px] absolute top-0 -right-1">▲</span></span>} onClick={() => onToggleStyle('fontSize', currentFontSize + 1)} title="Increase Font Size" className="w-5 h-5" />
-                        <RibbonButton variant="icon-only" icon={<span className="font-serif text-xs relative top-[1px]">A<span className="align-super text-[8px] absolute top-0 -right-1">▼</span></span>} onClick={() => onToggleStyle('fontSize', Math.max(1, currentFontSize - 1))} title="Decrease Font Size" className="w-5 h-5" />
+                    <div className="flex items-center ml-0.5 bg-slate-200/50 rounded p-0.5 border border-slate-200 h-7">
+                        <RibbonButton variant="icon-only" icon={<span className="font-serif text-sm relative top-[1px]">A<span className="align-super text-[8px] absolute top-0 -right-1">▲</span></span>} onClick={() => onToggleStyle('fontSize', currentFontSize + 1)} title="Increase Font Size" className="w-6 h-6" />
+                        <RibbonButton variant="icon-only" icon={<span className="font-serif text-xs relative top-[1px]">A<span className="align-super text-[8px] absolute top-0 -right-1">▼</span></span>} onClick={() => onToggleStyle('fontSize', Math.max(1, currentFontSize - 1))} title="Decrease Font Size" className="w-6 h-6" />
                     </div>
                 </div>
                 
@@ -109,12 +109,12 @@ const HomeTab: React.FC<TabProps> = ({ currentStyle, onToggleStyle, onClear }) =
                  </div>
 
                  <div className="flex flex-col gap-0.5 justify-center min-w-[100px]">
-                     <button className="flex items-center gap-2 px-2 py-0.5 hover:bg-slate-100 rounded text-[11px] font-medium text-slate-700 w-full text-left transition-colors">
-                         <WrapText size={14} className="text-slate-500" />
+                     <button className="flex items-center gap-2 px-2 py-0.5 hover:bg-slate-100 rounded text-[11px] font-medium text-slate-700 w-full text-left transition-colors h-7">
+                         <WrapText size={16} className="text-slate-500" />
                          <span>Wrap Text</span>
                      </button>
-                     <button className="flex items-center gap-2 px-2 py-0.5 hover:bg-slate-100 rounded text-[11px] font-medium text-slate-700 w-full text-left transition-colors">
-                         <Merge size={14} className="text-slate-500" />
+                     <button className="flex items-center gap-2 px-2 py-0.5 hover:bg-slate-100 rounded text-[11px] font-medium text-slate-700 w-full text-left transition-colors h-7">
+                         <Merge size={16} className="text-slate-500" />
                          <span>Merge & Center</span>
                          <ChevronDown size={10} className="ml-auto opacity-50 stroke-[3]" />
                      </button>
@@ -124,7 +124,7 @@ const HomeTab: React.FC<TabProps> = ({ currentStyle, onToggleStyle, onClear }) =
 
         <RibbonGroup label="Number">
              <div className="flex flex-col gap-1 justify-center h-full py-0.5">
-                 <div className="w-32 md:w-32 h-6 bg-white border border-slate-300 rounded flex items-center justify-between px-2 text-xs text-slate-700 shadow-sm cursor-pointer hover:border-slate-400">
+                 <div className="w-32 md:w-32 h-7 bg-white border border-slate-300 rounded flex items-center justify-between px-2 text-xs text-slate-700 shadow-sm cursor-pointer hover:border-slate-400">
                         <span>General</span>
                         <ChevronDown size={10} className="opacity-50" />
                  </div>

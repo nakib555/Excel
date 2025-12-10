@@ -116,11 +116,27 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200'
   } ${disabled ? 'opacity-40 cursor-default pointer-events-none' : 'cursor-pointer'} ${className}`;
 
+  // Icon sizing logic to fit 100px toolbar better
+  const getIconConfig = () => {
+    switch(variant) {
+      case 'large': return { size: 26, strokeWidth: 1.5 }; // Increased from 20 for better visibility
+      case 'small': return { size: 16, strokeWidth: 2 };
+      case 'icon-only': return { size: 18, strokeWidth: 2 }; // Increased from 14/16
+      default: return { size: 16, strokeWidth: 2 };
+    }
+  }
+  const iconConfig = getIconConfig();
+
+  // Apply size and stroke props if icon is a valid React element
+  const styledIcon = React.isValidElement(icon) 
+    ? React.cloneElement(icon as React.ReactElement<any>, iconConfig) 
+    : icon;
+
   if (variant === 'large') {
     return (
-      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-col px-1.5 py-0.5 h-full min-w-[48px] md:min-w-[56px] gap-0.5`}>
-        <div className="p-1">{icon}</div>
-        <div className="text-[10px] font-medium leading-tight text-center flex flex-col items-center">
+      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-col px-1.5 py-1 h-full min-w-[52px] md:min-w-[64px] gap-1`}>
+        <div className="p-1.5">{styledIcon}</div>
+        <div className="text-[11px] font-medium leading-tight text-center flex flex-col items-center text-slate-700">
             {label}
             {subLabel && <span>{subLabel}</span>}
             {hasDropdown && <ChevronDown size={10} className="mt-0.5 opacity-50 stroke-[3]" />}
@@ -131,9 +147,9 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
 
   if (variant === 'small') {
     return (
-      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-row px-2 py-0.5 w-full justify-start gap-2 text-left`}>
-        <div className="transform scale-90 flex-shrink-0">{icon}</div>
-        {label && <span className="text-[11px] font-medium whitespace-nowrap">{label}</span>}
+      <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} flex-row px-2 py-1 w-full justify-start gap-2.5 text-left`}>
+        <div className="transform flex-shrink-0 text-slate-700">{styledIcon}</div>
+        {label && <span className="text-[12px] text-slate-700 font-medium whitespace-nowrap">{label}</span>}
         {hasDropdown && <ChevronDown size={10} className="ml-auto opacity-50 stroke-[3]" />}
       </button>
     );
@@ -141,8 +157,8 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
 
   // Icon only
   return (
-    <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} p-0.5 w-7 h-7 md:w-6 md:h-6 relative`}>
-      {icon}
+    <button onClick={onClick} title={title} disabled={disabled} className={`${baseClass} p-1 w-8 h-8 relative`}>
+      {styledIcon}
       {hasDropdown && <ChevronDown size={8} className="absolute bottom-0.5 right-0.5 opacity-60 stroke-[3]" />}
     </button>
   );
@@ -155,6 +171,11 @@ export const ColorPicker: React.FC<{
     colors: string[];
     title: string;
 }> = ({ icon, color, onChange, colors, title }) => {
+    // Style the inner icon before wrapping
+    const styledIcon = React.isValidElement(icon) 
+        ? React.cloneElement(icon as React.ReactElement<any>, { size: 16, strokeWidth: 2 }) 
+        : icon;
+
     return (
         <div className="relative group">
             <RibbonButton 
@@ -164,7 +185,7 @@ export const ColorPicker: React.FC<{
                 hasDropdown
                 icon={
                     <div className="relative flex flex-col items-center justify-center h-full w-full">
-                        {icon}
+                        {styledIcon}
                         <div className="h-0.5 w-4 mt-0.5 rounded-sm shadow-sm" style={{ backgroundColor: color, border: color === 'transparent' ? '1px solid #e2e8f0' : 'none' }} />
                     </div>
                 }
@@ -190,4 +211,4 @@ export const ColorPicker: React.FC<{
     )
 }
 
-export const Separator = () => <div className="h-1/2 w-[1px] bg-slate-200 mx-1 flex-shrink-0 my-auto" />;
+export const Separator = () => <div className="h-3/5 w-[1px] bg-slate-200 mx-1.5 flex-shrink-0 my-auto" />;
