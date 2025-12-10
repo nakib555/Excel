@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useMemo, Suspense } from 'react';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
-import { evaluateFormula } from './utils/evaluator';
-import { getRange, getNextCellId } from './utils/helpers';
-import { NavigationDirection } from './components/Cell';
+import { evaluateFormula, getRange, getNextCellId } from './utils';
+import { NavigationDirection } from './components';
 import { Loader2 } from 'lucide-react';
 
 // Lazy Load Components

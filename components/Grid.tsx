@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, memo } from 'react';
 import Cell, { NavigationDirection } from './Cell';
 import { CellId, CellData, GridSize } from '../types';
-import { numToChar, getCellId } from '../utils/helpers';
+import { numToChar, getCellId } from '../utils';
 
 interface GridProps {
   size: GridSize;
