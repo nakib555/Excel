@@ -16,17 +16,17 @@ const DrawTab: React.FC<TabProps> = () => {
     >
          <RibbonGroup label="Undo">
             <div className="flex flex-col gap-0 h-full justify-center">
-                <RibbonButton variant="icon-only" icon={<Undo size={14} />} onClick={() => {}} />
-                <RibbonButton variant="icon-only" icon={<RotateCcw size={14} className="rotate-180 scale-x-[-1]" />} onClick={() => {}} />
+                <RibbonButton variant="icon-only" icon={<Undo size={14} className="text-blue-600" />} onClick={() => {}} />
+                <RibbonButton variant="icon-only" icon={<RotateCcw size={14} className="rotate-180 scale-x-[-1] text-blue-600" />} onClick={() => {}} />
             </div>
         </RibbonGroup>
 
         <RibbonGroup label="Drawing Tools">
             <div className="flex items-center gap-1 h-full">
-                <RibbonButton variant="large" icon={<MousePointer2 size={20} />} label="Select" onClick={() => {}} />
-                <RibbonButton variant="large" icon={<BoxSelect size={20} className="stroke-dashed" />} label="Lasso" onClick={() => {}} />
+                <RibbonButton variant="large" icon={<MousePointer2 size={20} className="text-slate-700" />} label="Select" onClick={() => {}} />
+                <RibbonButton variant="large" icon={<BoxSelect size={20} className="stroke-dashed text-slate-700" />} label="Lasso" onClick={() => {}} />
                 <Separator />
-                <RibbonButton variant="large" icon={<Eraser size={20} />} label="Eraser" hasDropdown onClick={() => {}} />
+                <RibbonButton variant="large" icon={<Eraser size={20} className="text-pink-500" />} label="Eraser" hasDropdown onClick={() => {}} />
                 <div className="flex gap-1 items-center px-1">
                     <RibbonButton variant="large" icon={<PenTool size={20} color="#000" fill="#000" />} label="Black" hasDropdown onClick={() => {}} />
                     <RibbonButton variant="large" icon={<PenTool size={20} color="#ef4444" fill="#ef4444" />} label="Red" hasDropdown onClick={() => {}} />
@@ -40,13 +40,13 @@ const DrawTab: React.FC<TabProps> = () => {
 
         <RibbonGroup label="Convert">
             <div className="flex items-center gap-1 h-full">
-                <RibbonButton variant="large" icon={<Shapes size={20} className="text-blue-500" />} label="Ink to" subLabel="Shape" onClick={() => {}} />
-                <RibbonButton variant="large" icon={<Pi size={20} className="text-blue-500" />} label="Ink to" subLabel="Math" onClick={() => {}} />
+                <RibbonButton variant="large" icon={<Shapes size={20} className="text-indigo-500" />} label="Ink to" subLabel="Shape" onClick={() => {}} />
+                <RibbonButton variant="large" icon={<Pi size={20} className="text-orange-500" />} label="Ink to" subLabel="Math" onClick={() => {}} />
             </div>
         </RibbonGroup>
 
         <RibbonGroup label="Replay">
-            <RibbonButton variant="large" icon={<PlayCircle size={20} className="text-green-600" />} label="Ink" subLabel="Replay" onClick={() => {}} />
+            <RibbonButton variant="large" icon={<PlayCircle size={20} className="text-emerald-600" />} label="Ink" subLabel="Replay" onClick={() => {}} />
         </RibbonGroup>
     </motion.div>
   );

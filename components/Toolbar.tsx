@@ -37,17 +37,17 @@ const Toolbar: React.FC<TabProps> = (props) => {
          <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
                <div className="grid place-items-center w-9 h-9 rounded hover:bg-white/10 transition-colors cursor-pointer">
-                 <Grid3X3 size={20} className="text-white" />
+                 <Grid3X3 size={20} className="text-emerald-400" />
                </div>
                <span className="text-sm font-semibold tracking-wide text-white">Excel</span>
             </div>
             
              <div className="flex items-center gap-2 ml-4">
-                <button title="Undo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Undo size={16} /></button>
-                <button title="Redo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Redo size={16} /></button>
+                <button title="Undo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Undo size={16} className="text-blue-300" /></button>
+                <button title="Redo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Redo size={16} className="text-blue-300" /></button>
                 <div className="w-[1px] h-4 bg-slate-700 mx-1"></div>
                 <button onClick={props.onExport} title="Save/Export" className="p-1.5 px-3 hover:bg-white/10 rounded-full text-slate-300 hover:text-white flex items-center gap-2 transition-colors">
-                     <Download size={16} />
+                     <Download size={16} className="text-green-400" />
                      <span className="text-xs font-medium hidden md:block">Save</span>
                 </button>
                 
@@ -61,11 +61,11 @@ const Toolbar: React.FC<TabProps> = (props) => {
          
          <div className="flex items-center gap-3">
             <div className="relative group hidden lg:block">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-200 transition-colors" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
                 <input 
                     type="text" 
                     placeholder="Search" 
-                    className="h-8 w-64 bg-slate-800/50 border border-slate-700/50 rounded-md text-xs text-white placeholder-slate-400 pl-9 pr-4 focus:outline-none focus:bg-slate-800 focus:border-slate-600 transition-all"
+                    className="h-8 w-64 bg-slate-800/50 border border-slate-700/50 rounded-md text-xs text-white placeholder-slate-400 pl-9 pr-4 focus:outline-none focus:bg-slate-800 focus:border-blue-500/50 transition-all"
                 />
             </div>
              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md ring-2 ring-[#0f172a] ml-2 cursor-pointer hover:bg-indigo-500 transition-colors">
@@ -99,7 +99,7 @@ const Toolbar: React.FC<TabProps> = (props) => {
         <button
             className="hidden md:flex relative px-4 py-2 mb-1 text-[12px] font-medium text-indigo-300 hover:text-white hover:bg-white/5 rounded-md transition-all whitespace-nowrap flex-shrink-0 select-none items-center gap-1.5"
         >
-            <Sparkles size={14} />
+            <Sparkles size={14} className="text-yellow-400" />
             <span>AI Assistant</span>
         </button>
       </div>
@@ -127,7 +127,7 @@ const Toolbar: React.FC<TabProps> = (props) => {
                         className="flex items-center justify-center w-full h-full text-slate-400 gap-3"
                     >
                         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                            <FileSpreadsheet size={24} className="opacity-50" />
+                            <FileSpreadsheet size={24} className="opacity-50 text-green-600" />
                         </div>
                         <div className="text-sm">
                             <span className="font-semibold text-slate-600">Backstage View</span> is not implemented in this demo.
