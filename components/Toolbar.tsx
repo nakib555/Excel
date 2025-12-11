@@ -84,19 +84,13 @@ const Toolbar: React.FC<TabProps> = (props) => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={cn(
-                            "relative px-4 py-2 text-[13px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 select-none rounded-t-lg",
+                            "relative px-4 py-2 text-[13px] transition-all duration-150 whitespace-nowrap flex-shrink-0 select-none rounded-t-md outline-none",
                             isActive 
-                                ? "bg-[#f8fafc] text-[#4f46e5] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-10 pb-2.5 -mb-0.5" 
-                                : "text-slate-300 hover:bg-slate-800 hover:text-white mb-1"
+                                ? "bg-[#f8fafc] text-[#4f46e5] font-bold shadow-none z-10 pb-2.5 -mb-0.5" 
+                                : "text-slate-200 hover:bg-white/10 hover:text-white mb-1 font-medium"
                         )}
                     >
                         {tab}
-                        {isActive && (
-                             <motion.div 
-                                layoutId="activeTabIndicator"
-                                className="absolute top-0 left-0 right-0 h-0.5 bg-[#4f46e5] rounded-t-lg opacity-0" 
-                             />
-                        )}
                     </button>
                 );
             })}
