@@ -1,12 +1,14 @@
-import React, { memo } from 'react';
+
+import React, { memo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { TabProps } from '../shared';
+import { GroupSkeleton } from '../../Skeletons';
 
-import GetTransformGroup from './GetTransform/GetTransformGroup';
-import QueriesConnectionsGroup from './GetTransform/QueriesConnectionsGroup';
-import DataTypesGroup from './DataTypes/DataTypesGroup';
-import SortFilterGroup from './SortFilter/SortFilterGroup';
-import DataToolsGroup from './DataTools/DataToolsGroup';
+const GetTransformGroup = lazy(() => import('./GetTransform/GetTransformGroup'));
+const QueriesConnectionsGroup = lazy(() => import('./GetTransform/QueriesConnectionsGroup'));
+const DataTypesGroup = lazy(() => import('./DataTypes/DataTypesGroup'));
+const SortFilterGroup = lazy(() => import('./SortFilter/SortFilterGroup'));
+const DataToolsGroup = lazy(() => import('./DataTools/DataToolsGroup'));
 
 const DataTab: React.FC<TabProps> = () => {
   return (
@@ -16,11 +18,11 @@ const DataTab: React.FC<TabProps> = () => {
         exit={{ opacity: 0 }}
         className="flex h-full min-w-max gap-1"
     >
-        <GetTransformGroup />
-        <QueriesConnectionsGroup />
-        <DataTypesGroup />
-        <SortFilterGroup />
-        <DataToolsGroup />
+        <Suspense fallback={<GroupSkeleton width={200} />}><GetTransformGroup /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={140} />}><QueriesConnectionsGroup /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={140} />}><DataTypesGroup /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={180} />}><SortFilterGroup /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={240} />}><DataToolsGroup /></Suspense>
     </motion.div>
   );
 };

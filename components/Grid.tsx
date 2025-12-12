@@ -1,9 +1,11 @@
 
-import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense } from 'react';
+
+import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense, lazy } from 'react';
 import { CellId, CellData, GridSize } from '../types';
 import { numToChar, getCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
-import Cell from './Cell';
+// Import Cell lazily for granular loading effect
+const Cell = lazy(() => import('./Cell'));
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // --- CONFIGURATION CONSTANTS ---
@@ -102,25 +104,35 @@ const GridRow = memo(({
                 const data = cells[id] || { id, raw: '', value: '', style: {} };
                 const isSelected = activeCell === id;
                 const isInRange = selectionRange ? selectionRange.includes(id) : false;
+                const width = getColW(col);
                 
                 return (
-                    <Cell 
+                    <Suspense 
                         key={id} 
-                        id={id} 
-                        data={data}
-                        isSelected={isSelected}
-                        isActive={isSelected} 
-                        isInRange={isInRange}
-                        width={getColW(col)}
-                        height={height}
-                        scale={scale}
-                        isGhost={isGhost}
-                        onMouseDown={handleMouseDown}
-                        onMouseEnter={handleMouseEnter}
-                        onDoubleClick={onCellDoubleClick}
-                        onChange={onCellChange}
-                        onNavigate={onNavigate}
-                    />
+                        fallback={
+                            <div 
+                                className="relative box-border border-r border-b border-slate-200 bg-white skeleton-shine"
+                                style={{ width, height, minWidth: width, minHeight: height }}
+                            />
+                        }
+                    >
+                        <Cell 
+                            id={id} 
+                            data={data}
+                            isSelected={isSelected}
+                            isActive={isSelected} 
+                            isInRange={isInRange}
+                            width={width}
+                            height={height}
+                            scale={scale}
+                            isGhost={isGhost}
+                            onMouseDown={handleMouseDown}
+                            onMouseEnter={handleMouseEnter}
+                            onDoubleClick={onCellDoubleClick}
+                            onChange={onCellChange}
+                            onNavigate={onNavigate}
+                        />
+                    </Suspense>
                 );
             })}
 
@@ -217,12 +229,15 @@ const Grid: React.FC<GridProps> = ({
     // When zoomed out (scale < 1), we see many more cells, so we need a larger buffer 
     // to prevent white space while scrolling.
     const inverseScaleMultiplier = Math.max(1, 1 / scale);
-    let rowBuffer = Math.ceil(4 * inverseScaleMultiplier); 
-    let colBuffer = Math.ceil(2 * inverseScaleMultiplier);
     
-    // Cap buffer if it gets too crazy to prevent massive DOM
-    rowBuffer = Math.min(rowBuffer, 12);
-    colBuffer = Math.min(colBuffer, 6);
+    // User Requirement: "cell remain loaded outisde of view left and down will be 20"
+    // User Requirement: "for loading => 20-30"
+    let rowBuffer = Math.ceil(20 * inverseScaleMultiplier); 
+    let colBuffer = Math.ceil(20 * inverseScaleMultiplier);
+    
+    // Cap buffer to prevent excessively massive DOM
+    rowBuffer = Math.min(rowBuffer, 30);
+    colBuffer = Math.min(colBuffer, 30);
 
     // Offload Strategy (Memory Overload Protection)
     let safeRowEnd = rowEndIndex;

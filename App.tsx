@@ -21,11 +21,11 @@ const SheetTabs = lazy(() => import('./components/SheetTabs'));
 const StatusBar = lazy(() => import('./components/StatusBar'));
 
 // Configuration
-const INITIAL_ROWS = 200; 
-const INITIAL_COLS = 50; 
+const INITIAL_ROWS = 50; 
+const INITIAL_COLS = 30; 
 const MAX_ROWS = 1048576; 
 const MAX_COLS = 16384;   
-const EXPANSION_BATCH_ROWS = 100; // Smaller batches for smoother updates
+const EXPANSION_BATCH_ROWS = 30; // Smaller batches for smoother updates
 const EXPANSION_BATCH_COLS = 20;
 
 // Initial sample data generation helper

@@ -1,11 +1,13 @@
-import React, { memo } from 'react';
+
+import React, { memo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { RibbonGroup, TabProps } from '../shared';
+import { GroupSkeleton } from '../../Skeletons';
 
-import NewScript from './OfficeScripts/NewScript';
-import ViewScripts from './OfficeScripts/ViewScripts';
-import ScriptsGallery from './OfficeScripts/ScriptsGallery';
-import FlowTemplates from './PowerAutomate/FlowTemplates';
+const NewScript = lazy(() => import('./OfficeScripts/NewScript'));
+const ViewScripts = lazy(() => import('./OfficeScripts/ViewScripts'));
+const ScriptsGallery = lazy(() => import('./OfficeScripts/ScriptsGallery'));
+const FlowTemplates = lazy(() => import('./PowerAutomate/FlowTemplates'));
 
 const AutomateTab: React.FC<TabProps> = () => {
   return (
@@ -15,22 +17,28 @@ const AutomateTab: React.FC<TabProps> = () => {
         exit={{ opacity: 0 }}
         className="flex h-full min-w-max gap-1"
     >
-        <RibbonGroup label="Office Scripts">
-             <div className="flex items-center gap-1 h-full">
-                 <NewScript />
-                 <ViewScripts />
-             </div>
-        </RibbonGroup>
+        <Suspense fallback={<GroupSkeleton width={140} />}>
+            <RibbonGroup label="Office Scripts">
+                 <div className="flex items-center gap-1 h-full">
+                     <NewScript />
+                     <ViewScripts />
+                 </div>
+            </RibbonGroup>
+        </Suspense>
         
-        <RibbonGroup label="Office Scripts Gallery">
-            <ScriptsGallery />
-        </RibbonGroup>
+        <Suspense fallback={<GroupSkeleton width={200} />}>
+            <RibbonGroup label="Office Scripts Gallery">
+                <ScriptsGallery />
+            </RibbonGroup>
+        </Suspense>
 
-        <RibbonGroup label="Power Automate">
-             <div className="flex items-center gap-1 h-full">
-                 <FlowTemplates />
-             </div>
-        </RibbonGroup>
+        <Suspense fallback={<GroupSkeleton width={100} />}>
+            <RibbonGroup label="Power Automate">
+                 <div className="flex items-center gap-1 h-full">
+                     <FlowTemplates />
+                 </div>
+            </RibbonGroup>
+        </Suspense>
     </motion.div>
   );
 };

@@ -1,23 +1,26 @@
-import React, { memo } from 'react';
+
+import React, { memo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { RibbonGroup, Separator, TabProps } from '../shared';
+import { GroupSkeleton } from '../../Skeletons';
 
-import Undo from './Undo';
-import Redo from './Redo';
+// Lazy load tools to simulate feature isolation and loading polish
+const Undo = lazy(() => import('./Undo'));
+const Redo = lazy(() => import('./Redo'));
 
-import Select from './DrawingTools/Select';
-import Lasso from './DrawingTools/Lasso';
-import Eraser from './DrawingTools/Eraser';
-import BlackPen from './DrawingTools/BlackPen';
-import RedPen from './DrawingTools/RedPen';
-import GalaxyPen from './DrawingTools/GalaxyPen';
-import Highlight from './DrawingTools/Highlight';
-import GreenPen from './DrawingTools/GreenPen';
-import AddPen from './DrawingTools/AddPen';
+const Select = lazy(() => import('./DrawingTools/Select'));
+const Lasso = lazy(() => import('./DrawingTools/Lasso'));
+const Eraser = lazy(() => import('./DrawingTools/Eraser'));
+const BlackPen = lazy(() => import('./DrawingTools/BlackPen'));
+const RedPen = lazy(() => import('./DrawingTools/RedPen'));
+const GalaxyPen = lazy(() => import('./DrawingTools/GalaxyPen'));
+const Highlight = lazy(() => import('./DrawingTools/Highlight'));
+const GreenPen = lazy(() => import('./DrawingTools/GreenPen'));
+const AddPen = lazy(() => import('./DrawingTools/AddPen'));
 
-import InkToShape from './Convert/InkToShape';
-import InkToMath from './Convert/InkToMath';
-import InkReplay from './Convert/InkReplay';
+const InkToShape = lazy(() => import('./Convert/InkToShape'));
+const InkToMath = lazy(() => import('./Convert/InkToMath'));
+const InkReplay = lazy(() => import('./Convert/InkReplay'));
 
 const DrawTab: React.FC<TabProps> = () => {
   return (
@@ -27,40 +30,48 @@ const DrawTab: React.FC<TabProps> = () => {
         exit={{ opacity: 0 }}
         className="flex h-full min-w-max gap-1"
     >
-         <RibbonGroup label="Undo">
-            <div className="flex flex-col gap-0 h-full justify-center">
-                <Undo />
-                <Redo />
-            </div>
-        </RibbonGroup>
-
-        <RibbonGroup label="Drawing Tools">
-            <div className="flex items-center gap-1 h-full">
-                <Select />
-                <Lasso />
-                <Separator />
-                <Eraser />
-                <div className="flex gap-1 items-center px-1">
-                    <BlackPen />
-                    <RedPen />
-                    <GalaxyPen />
-                    <Highlight />
-                    <GreenPen />
+         <Suspense fallback={<GroupSkeleton width={70} />}>
+            <RibbonGroup label="Undo">
+                <div className="flex flex-col gap-0 h-full justify-center">
+                    <Undo />
+                    <Redo />
                 </div>
-                <AddPen />
-            </div>
-        </RibbonGroup>
+            </RibbonGroup>
+        </Suspense>
 
-        <RibbonGroup label="Convert">
-            <div className="flex items-center gap-1 h-full">
-                <InkToShape />
-                <InkToMath />
-            </div>
-        </RibbonGroup>
+        <Suspense fallback={<GroupSkeleton width={350} />}>
+            <RibbonGroup label="Drawing Tools">
+                <div className="flex items-center gap-1 h-full">
+                    <Select />
+                    <Lasso />
+                    <Separator />
+                    <Eraser />
+                    <div className="flex gap-1 items-center px-1">
+                        <BlackPen />
+                        <RedPen />
+                        <GalaxyPen />
+                        <Highlight />
+                        <GreenPen />
+                    </div>
+                    <AddPen />
+                </div>
+            </RibbonGroup>
+        </Suspense>
 
-        <RibbonGroup label="Replay">
-            <InkReplay />
-        </RibbonGroup>
+        <Suspense fallback={<GroupSkeleton width={120} />}>
+            <RibbonGroup label="Convert">
+                <div className="flex items-center gap-1 h-full">
+                    <InkToShape />
+                    <InkToMath />
+                </div>
+            </RibbonGroup>
+        </Suspense>
+
+        <Suspense fallback={<GroupSkeleton width={80} />}>
+            <RibbonGroup label="Replay">
+                <InkReplay />
+            </RibbonGroup>
+        </Suspense>
     </motion.div>
   );
 };

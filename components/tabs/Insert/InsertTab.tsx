@@ -1,13 +1,17 @@
-import React, { memo } from 'react';
+
+import React, { memo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { TabProps } from '../shared';
-import TablesGroup from './Tables/TablesGroup';
-import IllustrationsGroup from './Illustrations/IllustrationsGroup';
-import ChartsGroup from './Charts/ChartsGroup';
-import SparklinesGroup from './Sparklines/SparklinesGroup';
-import FiltersGroup from './Filters/FiltersGroup';
-import LinksCommentsGroup from './LinksComments/LinksCommentsGroup';
-import TextSymbolsGroup from './TextSymbols/TextSymbolsGroup';
+import { GroupSkeleton } from '../../Skeletons';
+
+// Granular lazy loading for tool groups
+const TablesGroup = lazy(() => import('./Tables/TablesGroup'));
+const IllustrationsGroup = lazy(() => import('./Illustrations/IllustrationsGroup'));
+const ChartsGroup = lazy(() => import('./Charts/ChartsGroup'));
+const SparklinesGroup = lazy(() => import('./Sparklines/SparklinesGroup'));
+const FiltersGroup = lazy(() => import('./Filters/FiltersGroup'));
+const LinksCommentsGroup = lazy(() => import('./LinksComments/LinksCommentsGroup'));
+const TextSymbolsGroup = lazy(() => import('./TextSymbols/TextSymbolsGroup'));
 
 const InsertTab: React.FC<TabProps> = (props) => {
   return (
@@ -17,13 +21,13 @@ const InsertTab: React.FC<TabProps> = (props) => {
         exit={{ opacity: 0 }}
         className="flex h-full min-w-max gap-1"
     >
-        <TablesGroup {...props} />
-        <IllustrationsGroup {...props} />
-        <ChartsGroup {...props} />
-        <SparklinesGroup {...props} />
-        <FiltersGroup {...props} />
-        <LinksCommentsGroup {...props} />
-        <TextSymbolsGroup {...props} />
+        <Suspense fallback={<GroupSkeleton width={160} />}><TablesGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={120} />}><IllustrationsGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={240} />}><ChartsGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={120} />}><SparklinesGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={100} />}><FiltersGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={100} />}><LinksCommentsGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={100} />}><TextSymbolsGroup {...props} /></Suspense>
     </motion.div>
   );
 };

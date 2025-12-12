@@ -1,13 +1,17 @@
-import React, { memo } from 'react';
+
+import React, { memo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { TabProps } from '../shared';
-import ClipboardGroup from './Clipboard/ClipboardGroup';
-import FontGroup from './Font/FontGroup';
-import AlignmentGroup from './Alignment/AlignmentGroup';
-import NumberGroup from './Number/NumberGroup';
-import StylesGroup from './Styles/StylesGroup';
-import CellsGroup from './Cells/CellsGroup';
-import EditingGroup from './Editing/EditingGroup';
+import { GroupSkeleton } from '../../Skeletons';
+
+// Granular lazy loading for tool groups
+const ClipboardGroup = lazy(() => import('./Clipboard/ClipboardGroup'));
+const FontGroup = lazy(() => import('./Font/FontGroup'));
+const AlignmentGroup = lazy(() => import('./Alignment/AlignmentGroup'));
+const NumberGroup = lazy(() => import('./Number/NumberGroup'));
+const StylesGroup = lazy(() => import('./Styles/StylesGroup'));
+const CellsGroup = lazy(() => import('./Cells/CellsGroup'));
+const EditingGroup = lazy(() => import('./Editing/EditingGroup'));
 
 const HomeTab: React.FC<TabProps> = (props) => {
   return (
@@ -17,13 +21,13 @@ const HomeTab: React.FC<TabProps> = (props) => {
         exit={{ opacity: 0 }}
         className="flex h-full min-w-max gap-1"
     >
-        <ClipboardGroup {...props} />
-        <FontGroup {...props} />
-        <AlignmentGroup {...props} />
-        <NumberGroup {...props} />
-        <StylesGroup {...props} />
-        <CellsGroup {...props} />
-        <EditingGroup {...props} />
+        <Suspense fallback={<GroupSkeleton width={80} />}><ClipboardGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={260} />}><FontGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={220} />}><AlignmentGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={160} />}><NumberGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={180} />}><StylesGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={120} />}><CellsGroup {...props} /></Suspense>
+        <Suspense fallback={<GroupSkeleton width={120} />}><EditingGroup {...props} /></Suspense>
     </motion.div>
   );
 };

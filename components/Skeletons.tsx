@@ -28,41 +28,26 @@ export const TabItemSkeleton = () => (
     </div>
 );
 
-const GroupSkeleton = () => (
-  <div className="flex flex-col h-full px-3 border-r border-slate-200/60 last:border-r-0 flex-shrink-0">
-    <div className="flex-1 flex gap-2 items-center justify-center py-1">
-       {/* Mock Large Button */}
-       <div className="flex flex-col items-center gap-1.5 min-w-[50px]">
-          <Skel className="w-9 h-9 rounded-md" />
-          <Skel className="w-12 h-2.5" />
-       </div>
-       
-       {/* Mock Column of small buttons */}
-       <div className="flex flex-col gap-1.5 h-full justify-center min-w-[80px]">
-          <div className="flex items-center gap-2">
-             <Skel className="w-4 h-4 rounded-sm" />
-             <Skel className="w-16 h-2.5" />
-          </div>
-          <div className="flex items-center gap-2">
-             <Skel className="w-4 h-4 rounded-sm" />
-             <Skel className="w-14 h-2.5" />
-          </div>
-          <div className="flex items-center gap-2">
-             <Skel className="w-4 h-4 rounded-sm" />
-             <Skel className="w-10 h-2.5" />
-          </div>
-       </div>
-
-        {/* Mock Large Button 2 */}
-       <div className="flex flex-col items-center gap-1.5 min-w-[50px] ml-1">
-          <Skel className="w-9 h-9 rounded-md" />
-          <Skel className="w-10 h-2.5" />
+// Enhanced GroupSkeleton with Width Support for "Ghost Element" effect
+export const GroupSkeleton = ({ width, className }: { width?: number | string; className?: string }) => (
+  <div 
+    className={cn("flex flex-col h-full border-r border-slate-200/50 last:border-r-0 flex-shrink-0 p-1 bg-white/5", className)}
+    style={{ minWidth: width || 80, width }}
+  >
+    {/* Full box ghost element with shine */}
+    <div className="flex-1 w-full p-1 flex items-center justify-center gap-2 relative overflow-hidden">
+       {/* Inner structure simulation */}
+       <div className="w-full h-full bg-slate-100/80 rounded border border-slate-200/50 skeleton-shine relative overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center opacity-30 gap-1">
+                <div className="w-1/3 h-2/3 bg-slate-300 rounded-sm" />
+                <div className="w-1/3 h-2/3 bg-slate-300 rounded-sm" />
+            </div>
        </div>
     </div>
     
-    {/* Group Label */}
-    <div className="h-[18px] flex items-center justify-center pb-1 mt-auto">
-         <Skel className="w-14 h-2" />
+    {/* Label Ghost */}
+    <div className="h-[14px] w-full flex items-center justify-center mt-0.5 pb-0.5">
+         <Skel className="h-2 w-16 rounded-sm opacity-40" />
     </div>
   </div>
 );
@@ -75,11 +60,11 @@ export const RibbonSkeleton = () => {
       exit={{ opacity: 0 }}
       className="flex h-full w-full items-center gap-0 overflow-hidden px-1 pointer-events-none select-none"
     >
-      <GroupSkeleton />
-      <GroupSkeleton />
-      <GroupSkeleton />
-      <GroupSkeleton />
-      <GroupSkeleton />
+      <GroupSkeleton width={80} />
+      <GroupSkeleton width={120} />
+      <GroupSkeleton width={200} />
+      <GroupSkeleton width={140} />
+      <GroupSkeleton width={100} />
     </motion.div>
   );
 };
@@ -113,42 +98,7 @@ export const ToolbarSkeleton = () => (
 
     {/* Ribbon Area */}
     <div className="h-[100px] bg-[#f8fafc] border-b border-slate-200 flex items-center px-4 py-2 gap-2 overflow-hidden">
-        <div className="flex flex-col h-full gap-2 justify-center px-2 border-r border-slate-200">
-             <div className="flex gap-2">
-                 <Skel className="w-10 h-10 rounded-md" />
-                 <div className="flex flex-col gap-1 justify-center">
-                     <Skel className="w-8 h-3" />
-                     <Skel className="w-6 h-3" />
-                 </div>
-             </div>
-             <Skel className="w-12 h-2.5 mx-auto mt-1" />
-        </div>
-        
-        <div className="flex flex-col h-full gap-2 justify-center px-4 border-r border-slate-200 min-w-[200px]">
-             <div className="flex gap-2 w-full mb-1">
-                 <Skel className="w-28 h-7 rounded-sm" />
-                 <Skel className="w-12 h-7 rounded-sm" />
-             </div>
-             <div className="flex gap-1 w-full justify-between">
-                 <Skel className="w-6 h-6 rounded-sm" />
-                 <Skel className="w-6 h-6 rounded-sm" />
-                 <Skel className="w-6 h-6 rounded-sm" />
-                 <div className="w-[1px] h-6 bg-slate-200 mx-1"></div>
-                 <Skel className="w-6 h-6 rounded-sm" />
-                 <Skel className="w-6 h-6 rounded-sm" />
-                 <Skel className="w-6 h-6 rounded-sm" />
-             </div>
-             <Skel className="w-12 h-2.5 mx-auto mt-auto" />
-        </div>
-
-        <div className="flex flex-col h-full gap-2 justify-center px-2 border-r border-slate-200 flex-1">
-             <div className="flex gap-4 h-full items-center pl-2">
-                 <Skel className="w-12 h-12 rounded-lg" />
-                 <Skel className="w-12 h-12 rounded-lg" />
-                 <Skel className="w-12 h-12 rounded-lg" />
-             </div>
-             <Skel className="w-16 h-2.5 mx-auto" />
-        </div>
+         <RibbonSkeleton />
     </div>
   </div>
 );
