@@ -49,3 +49,71 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
 }
+
+/* Custom Range Slider Styling for StatusBar */
+.range-slider {
+  -webkit-appearance: none;
+  background: transparent;
+  height: 20px; /* Ensure touch target */
+  display: flex;
+  align-items: center;
+}
+
+/* Webkit / Chrome / Edge */
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #3b82f6; /* Blue-500 */
+  cursor: pointer;
+  margin-top: -6px; /* (track height 2px - thumb height 14px) / 2 */
+  box-shadow: 0 0 0 1px #1e293b; /* subtle shadow */
+  transition: transform 0.1s ease, background 0.1s;
+}
+
+.range-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  background: #475569; /* Slate-600 */
+  border-radius: 1px;
+}
+
+.range-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.1);
+  background: #60a5fa; /* Blue-400 on hover */
+}
+.range-slider:active::-webkit-slider-thumb {
+  transform: scale(1.2);
+  background: #93c5fd; /* Blue-300 on active */
+}
+
+/* Firefox */
+.range-slider::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border: none;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px #1e293b;
+  transition: transform 0.1s ease, background 0.1s;
+}
+
+.range-slider::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  background: #475569;
+  border-radius: 1px;
+}
+
+.range-slider:hover::-moz-range-thumb {
+  transform: scale(1.1);
+  background: #60a5fa;
+}
+.range-slider:active::-moz-range-thumb {
+  transform: scale(1.2);
+  background: #93c5fd;
+}
