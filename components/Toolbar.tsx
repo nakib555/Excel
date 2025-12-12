@@ -1,21 +1,23 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, lazy, Suspense } from 'react';
 import { 
   FileSpreadsheet, Undo, Redo, Download, Search, Sparkles, Grid3X3 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DraggableScrollContainer, TabProps } from './toolbar/shared';
 import { cn } from '../utils';
+import RibbonSkeleton from './toolbar/RibbonSkeleton';
 
-// Static imports
-import HomeTab from './toolbar/HomeTab/index';
-import InsertTab from './toolbar/InsertTab/index';
-import DrawTab from './toolbar/DrawTab/index';
-import PageLayoutTab from './toolbar/PageLayoutTab/index';
-import FormulasTab from './toolbar/FormulasTab/index';
-import DataTab from './toolbar/DataTab/index';
-import ReviewTab from './toolbar/ReviewTab/index';
-import ViewTab from './toolbar/ViewTab/index';
-import AutomateTab from './toolbar/AutomateTab/index';
+// Lazy imports for Tabs
+const HomeTab = lazy(() => import('./toolbar/HomeTab/index'));
+const InsertTab = lazy(() => import('./toolbar/InsertTab/index'));
+const DrawTab = lazy(() => import('./toolbar/DrawTab/index'));
+const PageLayoutTab = lazy(() => import('./toolbar/PageLayoutTab/index'));
+const FormulasTab = lazy(() => import('./toolbar/FormulasTab/index'));
+const DataTab = lazy(() => import('./toolbar/DataTab/index'));
+const ReviewTab = lazy(() => import('./toolbar/ReviewTab/index'));
+const ViewTab = lazy(() => import('./toolbar/ViewTab/index'));
+const AutomateTab = lazy(() => import('./toolbar/AutomateTab/index'));
+const FileTab = lazy(() => import('./toolbar/FileTab/index'));
 
 const TABS = ['File', 'Home', 'Insert', 'Draw', 'Page Layout', 'Formulas', 'Data', 'Review', 'View', 'Automate'];
 
@@ -101,30 +103,55 @@ const Toolbar: React.FC<TabProps> = (props) => {
       <div className="bg-[#f8fafc] border-b border-slate-200 shadow-sm z-0 relative">
       <DraggableScrollContainer className="h-[100px] flex items-stretch px-2 md:px-4 w-full">
           <AnimatePresence mode='wait'>
-                {activeTab === 'Home' && <HomeTab {...props} key="home" />}
-                {activeTab === 'Insert' && <InsertTab {...props} key="insert" />}
-                {activeTab === 'Draw' && <DrawTab {...props} key="draw" />}
-                {activeTab === 'Page Layout' && <PageLayoutTab {...props} key="page-layout" />}
-                {activeTab === 'Formulas' && <FormulasTab {...props} key="formulas" />}
-                {activeTab === 'Data' && <DataTab {...props} key="data" />}
-                {activeTab === 'Review' && <ReviewTab {...props} key="review" />}
-                {activeTab === 'View' && <ViewTab {...props} key="view" />}
-                {activeTab === 'Automate' && <AutomateTab {...props} key="automate" />}
-                
+                {activeTab === 'Home' && (
+                    <Suspense key="home-suspense" fallback={<RibbonSkeleton />}>
+                        <HomeTab {...props} key="home" />
+                    </Suspense>
+                )}
+                {activeTab === 'Insert' && (
+                    <Suspense key="insert-suspense" fallback={<RibbonSkeleton />}>
+                        <InsertTab {...props} key="insert" />
+                    </Suspense>
+                )}
+                {activeTab === 'Draw' && (
+                    <Suspense key="draw-suspense" fallback={<RibbonSkeleton />}>
+                        <DrawTab {...props} key="draw" />
+                    </Suspense>
+                )}
+                {activeTab === 'Page Layout' && (
+                    <Suspense key="page-layout-suspense" fallback={<RibbonSkeleton />}>
+                        <PageLayoutTab {...props} key="page-layout" />
+                    </Suspense>
+                )}
+                {activeTab === 'Formulas' && (
+                    <Suspense key="formulas-suspense" fallback={<RibbonSkeleton />}>
+                        <FormulasTab {...props} key="formulas" />
+                    </Suspense>
+                )}
+                {activeTab === 'Data' && (
+                    <Suspense key="data-suspense" fallback={<RibbonSkeleton />}>
+                        <DataTab {...props} key="data" />
+                    </Suspense>
+                )}
+                {activeTab === 'Review' && (
+                    <Suspense key="review-suspense" fallback={<RibbonSkeleton />}>
+                        <ReviewTab {...props} key="review" />
+                    </Suspense>
+                )}
+                {activeTab === 'View' && (
+                    <Suspense key="view-suspense" fallback={<RibbonSkeleton />}>
+                        <ViewTab {...props} key="view" />
+                    </Suspense>
+                )}
+                {activeTab === 'Automate' && (
+                    <Suspense key="automate-suspense" fallback={<RibbonSkeleton />}>
+                        <AutomateTab {...props} key="automate" />
+                    </Suspense>
+                )}
                 {activeTab === 'File' && (
-                     <motion.div 
-                        key="file"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex items-center justify-center w-full h-full text-slate-400 gap-3"
-                    >
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                            <FileSpreadsheet size={24} className="opacity-50 text-green-600" />
-                        </div>
-                        <div className="text-sm">
-                            <span className="font-semibold text-slate-600">Backstage View</span> is not implemented in this demo.
-                        </div>
-                    </motion.div>
+                    <Suspense key="file-suspense" fallback={<RibbonSkeleton />}>
+                        <FileTab {...props} key="file" />
+                    </Suspense>
                 )}
           </AnimatePresence>
       </DraggableScrollContainer>

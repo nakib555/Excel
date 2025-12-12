@@ -1,14 +1,23 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
 import { evaluateFormula, getRange, getNextCellId } from './utils';
 import { NavigationDirection } from './components';
 
-// Static Imports
-import Toolbar from './components/Toolbar';
-import FormulaBar from './components/FormulaBar';
-import Grid from './components/Grid';
-import SheetTabs from './components/SheetTabs';
-import StatusBar from './components/StatusBar';
+// Import Skeletons
+import { 
+  ToolbarSkeleton, 
+  FormulaBarSkeleton, 
+  GridSkeleton, 
+  SheetTabsSkeleton, 
+  StatusBarSkeleton 
+} from './components/Skeletons';
+
+// Lazy Imports for Main Components
+const Toolbar = lazy(() => import('./components/Toolbar'));
+const FormulaBar = lazy(() => import('./components/FormulaBar'));
+const Grid = lazy(() => import('./components/Grid'));
+const SheetTabs = lazy(() => import('./components/SheetTabs'));
+const StatusBar = lazy(() => import('./components/StatusBar'));
 
 // Initial Configuration
 const INITIAL_ROWS = 50;
@@ -78,6 +87,36 @@ const App: React.FC = () => {
     if (!activeCell || !cells[activeCell]) return {};
     return cells[activeCell].style;
   }, [activeCell, cells]);
+
+  const selectionStats = useMemo(() => {
+    if (!selectionRange || selectionRange.length <= 1) return null;
+    
+    let sum = 0;
+    let count = 0;
+    let numericCount = 0;
+    
+    selectionRange.forEach(id => {
+        const cell = cells[id];
+        if (cell && cell.value) {
+            count++;
+            // Simple parsing to handle basic numbers. 
+            // In a real app, this would need to handle formatted currency strings, etc.
+            const cleanValue = cell.value.replace(/[^0-9.-]+/g,"");
+            const num = parseFloat(cleanValue);
+            if (!isNaN(num) && cell.value.trim() !== '') {
+                sum += num;
+                numericCount++;
+            }
+        }
+    });
+
+    return {
+        sum,
+        count,
+        average: numericCount > 0 ? sum / numericCount : 0,
+        hasNumeric: numericCount > 0
+    };
+  }, [selectionRange, cells]);
 
   const handleCellChange = useCallback((id: CellId, rawValue: string) => {
     setSheets(prevSheets => prevSheets.map(sheet => {
@@ -243,51 +282,62 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
-        <Toolbar 
-          currentStyle={activeStyle}
-          onToggleStyle={handleStyleChange}
-          onExport={handleExport}
-          onClear={handleClear}
-          onResetLayout={handleResetLayout}
-        />
+        <Suspense fallback={<ToolbarSkeleton />}>
+            <Toolbar 
+              currentStyle={activeStyle}
+              onToggleStyle={handleStyleChange}
+              onExport={handleExport}
+              onClear={handleClear}
+              onResetLayout={handleResetLayout}
+            />
+        </Suspense>
         
-        <FormulaBar 
-          selectedCell={activeCell}
-          value={activeCell ? (cells[activeCell]?.raw || '') : ''}
-          onChange={handleFormulaChange}
-          onSubmit={handleFormulaSubmit}
-        />
+        <Suspense fallback={<FormulaBarSkeleton />}>
+            <FormulaBar 
+              selectedCell={activeCell}
+              value={activeCell ? (cells[activeCell]?.raw || '') : ''}
+              onChange={handleFormulaChange}
+              onSubmit={handleFormulaSubmit}
+            />
+        </Suspense>
         
         <div className="flex-1 overflow-hidden relative flex flex-col z-0">
-          <Grid 
-            size={gridSize}
-            cells={cells}
-            activeCell={activeCell}
-            selectionRange={selectionRange}
-            columnWidths={columnWidths}
-            rowHeights={rowHeights} 
-            scale={zoom}
-            onCellClick={handleCellClick}
-            onCellDoubleClick={handleCellDoubleClick}
-            onCellChange={handleCellChange}
-            onNavigate={handleNavigate}
-            onColumnResize={handleColumnResize}
-            onRowResize={handleRowResize}
-          />
+          <Suspense fallback={<GridSkeleton />}>
+              <Grid 
+                size={gridSize}
+                cells={cells}
+                activeCell={activeCell}
+                selectionRange={selectionRange}
+                columnWidths={columnWidths}
+                rowHeights={rowHeights} 
+                scale={zoom}
+                onCellClick={handleCellClick}
+                onCellDoubleClick={handleCellDoubleClick}
+                onCellChange={handleCellChange}
+                onNavigate={handleNavigate}
+                onColumnResize={handleColumnResize}
+                onRowResize={handleRowResize}
+              />
+          </Suspense>
         </div>
 
-        <SheetTabs 
-          sheets={sheets}
-          activeSheetId={activeSheetId}
-          onSwitch={setActiveSheetId}
-          onAdd={handleAddSheet}
-        />
+        <Suspense fallback={<SheetTabsSkeleton />}>
+            <SheetTabs 
+              sheets={sheets}
+              activeSheetId={activeSheetId}
+              onSwitch={setActiveSheetId}
+              onAdd={handleAddSheet}
+            />
+        </Suspense>
         
-        <StatusBar 
-          selectionCount={selectionRange?.length || 0}
-          zoom={zoom}
-          onZoomChange={setZoom}
-        />
+        <Suspense fallback={<StatusBarSkeleton />}>
+            <StatusBar 
+              selectionCount={selectionRange?.length || 0}
+              stats={selectionStats}
+              zoom={zoom}
+              onZoomChange={setZoom}
+            />
+        </Suspense>
     </div>
   );
 };
