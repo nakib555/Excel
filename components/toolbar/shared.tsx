@@ -94,6 +94,21 @@ export const RibbonGroup: React.FC<{ label: string; children: React.ReactNode; c
   </div>
 );
 
+export const GroupSkeleton: React.FC = () => (
+  <div className="flex flex-col h-full px-2 border-r border-slate-200 last:border-r-0 flex-shrink-0 animate-pulse min-w-[80px]">
+    <div className="flex-1 flex gap-2 items-center justify-center min-h-0">
+       <div className="w-8 h-8 bg-slate-100 rounded"></div>
+       <div className="flex flex-col gap-1">
+          <div className="w-6 h-3 bg-slate-100 rounded"></div>
+          <div className="w-6 h-3 bg-slate-100 rounded"></div>
+       </div>
+    </div>
+    <div className="h-[18px] flex items-center justify-center pb-1">
+       <div className="w-12 h-2.5 bg-slate-100 rounded"></div>
+    </div>
+  </div>
+);
+
 interface RibbonButtonProps {
   icon: React.ReactNode;
   label?: string;
