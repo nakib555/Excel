@@ -22,12 +22,15 @@ const getDeviceSafeNodeLimit = () => {
         // @ts-ignore
         const ram = (navigator as any).deviceMemory as number;
         // Increase limits for modern devices to prevent aggressive virtualization culling
-        return ram && ram <= 4 ? 1500 : 3500; 
+        return ram && ram <= 4 ? 2000 : 4000; 
     }
-    return 2500; // Conservative default bumped up
+    return 3000; // Conservative default bumped up
 };
 
 const MAX_DOM_NODES = getDeviceSafeNodeLimit();
+
+// User Requirement: "cell remain loaded outisde of view left and down will be 20"
+const BUFFER_SIZE = 20;
 
 interface GridProps {
   size: GridSize;
@@ -168,7 +171,7 @@ const Grid: React.FC<GridProps> = ({
   onColumnResize,
   onRowResize,
   onExpandGrid,
-  // onTrimGrid prop is no longer used for auto-trimming
+  onTrimGrid,
   onZoom
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -185,6 +188,7 @@ const Grid: React.FC<GridProps> = ({
   const pinchScaleRef = useRef(1); 
   const touchStartDist = useRef<number>(0);
   const scrollTimeoutRef = useRef<any>(null);
+  const trimTimeoutRef = useRef<any>(null);
   
   // Virtualization State
   const [scrollState, setScrollState] = useState({ 
@@ -226,38 +230,36 @@ const Grid: React.FC<GridProps> = ({
     const totalVisible = rowsVisible * colsVisible;
 
     // Buffer Strategy (Load)
-    // When zoomed out (scale < 1), we see many more cells, so we need a larger buffer 
-    // to prevent white space while scrolling.
-    const inverseScaleMultiplier = Math.max(1, 1 / scale);
+    // Requirement: "for loading => 20-30"
+    // Requirement: "cell remain loaded outisde of view left and down will be 20"
+    // We strictly use BUFFER_SIZE = 20 here.
+    let rowBuffer = BUFFER_SIZE; 
+    let colBuffer = BUFFER_SIZE;
     
-    // User Requirement: "cell remain loaded outisde of view left and down will be 20"
-    // User Requirement: "for loading => 20-30"
-    let rowBuffer = Math.ceil(20 * inverseScaleMultiplier); 
-    let colBuffer = Math.ceil(20 * inverseScaleMultiplier);
-    
-    // Cap buffer to prevent excessively massive DOM
-    rowBuffer = Math.min(rowBuffer, 30);
-    colBuffer = Math.min(colBuffer, 30);
-
     // Offload Strategy (Memory Overload Protection)
     let safeRowEnd = rowEndIndex;
     let safeColEnd = colEndIndex;
     let isOverloaded = false;
 
-    if (totalVisible > MAX_DOM_NODES) {
-        // We are overloaded. 
+    // Adjust overload check to be less aggressive if we are just slightly above limit
+    // because user requested specific loading buffer.
+    if (totalVisible + (rowBuffer * colsVisible) + (colBuffer * rowsVisible) > MAX_DOM_NODES) {
+        // We are potentially overloaded. 
         // Strategy: Reduce buffer to minimum, but try to keep visible area intact
-        const ratio = MAX_DOM_NODES / totalVisible;
-        const safeRows = Math.floor(rowsVisible * Math.sqrt(ratio));
-        const safeCols = Math.floor(colsVisible * Math.sqrt(ratio));
-        
-        safeRowEnd = rowStartIndex + safeRows;
-        safeColEnd = colStartIndex + safeCols;
-        rowBuffer = 1; // Minimal buffer
-        colBuffer = 1;
-        isOverloaded = true;
+        const ratio = MAX_DOM_NODES / (totalVisible + 200); // add padding
+        if (ratio < 0.8) {
+             const safeRows = Math.floor(rowsVisible * Math.sqrt(ratio));
+             const safeCols = Math.floor(colsVisible * Math.sqrt(ratio));
+             
+             safeRowEnd = rowStartIndex + safeRows;
+             safeColEnd = colStartIndex + safeCols;
+             rowBuffer = 5; // Minimal buffer when overloaded
+             colBuffer = 5;
+             isOverloaded = true;
+        }
     }
 
+    // Trim cell beyond data side logic is handled by setting these boundaries strictly
     const finalRowStart = Math.max(0, rowStartIndex - rowBuffer);
     const finalRowEnd = Math.min(size.rows - 1, safeRowEnd + rowBuffer);
     
@@ -405,12 +407,17 @@ const Grid: React.FC<GridProps> = ({
     // Ghost Mode: Detect fast scrolling
     setIsScrollingFast(true);
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    scrollTimeoutRef.current = setTimeout(() => setIsScrollingFast(false), 150);
-
-    // Automatic Trimming Removed: 
-    // Previously, the grid would auto-shrink if the user was idle, which caused the view to "jump" 
-    // if the user had scrolled to an empty area. We now allow the grid to stay expanded (Infinite Scroll behavior)
-    // to preserve the user's scroll position and experience.
+    scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrollingFast(false);
+        // Requirement: "for left trim cell beyond data side for down trim cell beyond data side"
+        // We trigger trim when user stops scrolling to cleanup excessive empty space
+        if (onTrimGrid) {
+            if (trimTimeoutRef.current) clearTimeout(trimTimeoutRef.current);
+            trimTimeoutRef.current = setTimeout(() => {
+                onTrimGrid();
+            }, 200);
+        }
+    }, 150);
 
     checkExpansion();
 
@@ -422,7 +429,7 @@ const Grid: React.FC<GridProps> = ({
             clientWidth: element.clientWidth 
         });
     });
-  }, [checkExpansion]);
+  }, [checkExpansion, onTrimGrid]);
 
   // Helpers
   const handleMouseDown = useCallback((id: string, isShift: boolean) => {

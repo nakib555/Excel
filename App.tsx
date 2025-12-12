@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
 import { evaluateFormula, getRange, getNextCellId, parseCellId } from './utils';
@@ -21,6 +22,7 @@ const SheetTabs = lazy(() => import('./components/SheetTabs'));
 const StatusBar = lazy(() => import('./components/StatusBar'));
 
 // Configuration
+// User Requirement: "for cell genaration =>50 or 30"
 const INITIAL_ROWS = 50; 
 const INITIAL_COLS = 30; 
 const MAX_ROWS = 1048576; 
@@ -249,6 +251,45 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // User Requirement: "trim cell beyond data side"
+  const handleTrimGrid = useCallback(() => {
+    // Find max extent of data
+    let maxRow = 0;
+    let maxCol = 0;
+    
+    const ids = Object.keys(cells);
+    if (ids.length === 0) {
+         setGridSize({ rows: INITIAL_ROWS, cols: INITIAL_COLS });
+         return;
+    }
+
+    for (const id of ids) {
+         const { row, col } = parseCellId(id) || { row: 0, col: 0 };
+         if (row > maxRow) maxRow = row;
+         if (col > maxCol) maxCol = col;
+    }
+    
+    // Check active cell too to avoid cutting off user focus
+    if (activeCell) {
+         const { row, col } = parseCellId(activeCell) || { row: 0, col: 0 };
+         if (row > maxRow) maxRow = row;
+         if (col > maxCol) maxCol = col;
+    }
+
+    // Add buffer of 20 as requested for outside view
+    const BUFFER = 20; 
+    const newRows = Math.max(INITIAL_ROWS, maxRow + 1 + BUFFER);
+    const newCols = Math.max(INITIAL_COLS, maxCol + 1 + BUFFER);
+
+    setGridSize(prev => {
+        // Only trim if significantly larger to avoid layout thrashing during active use
+        if (prev.rows > newRows + 10 || prev.cols > newCols + 10) {
+             return { rows: newRows, cols: newCols };
+        }
+        return prev;
+    });
+  }, [cells, activeCell]);
+
   const handleExport = useCallback(() => {
     const rows = [];
     for(let r=0; r<Math.min(gridSize.rows, 50); r++) { 
@@ -312,8 +353,6 @@ const App: React.FC = () => {
   }, [activeCell, handleCellChange]);
 
   const handleZoomWheel = useCallback((delta: number) => {
-    // Throttled update handled in Grid component mostly, 
-    // but here we ensure state limits
     setZoom(prev => {
         const next = prev + delta;
         return Math.min(4, Math.max(0.1, Number(next.toFixed(2))));
@@ -363,6 +402,7 @@ const App: React.FC = () => {
                 onColumnResize={handleColumnResize}
                 onRowResize={handleRowResize}
                 onExpandGrid={handleExpandGrid}
+                onTrimGrid={handleTrimGrid}
                 onZoom={handleZoomWheel}
               />
           </Suspense>
