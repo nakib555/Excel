@@ -20,11 +20,12 @@ const SheetTabs = lazy(() => import('./components/SheetTabs'));
 const StatusBar = lazy(() => import('./components/StatusBar'));
 
 // Configuration
-const INITIAL_ROWS = 100;
-const INITIAL_COLS = 26; // A-Z
-const MAX_ROWS = 1000000; // Support up to 1 Million rows
-const MAX_COLS = 16384;   // Standard Excel column limit
-const EXPANSION_BATCH = 100; // Generate 100 rows/cols at a time for smoother infinite scroll
+const INITIAL_ROWS = 200;
+const INITIAL_COLS = 50; 
+const MAX_ROWS = 1048576; // Excel standard
+const MAX_COLS = 16384;   // Excel standard
+const EXPANSION_BATCH_ROWS = 200;
+const EXPANSION_BATCH_COLS = 50;
 
 // Initial sample data generation helper
 const generateInitialData = (): Record<CellId, CellData> => {
@@ -222,12 +223,10 @@ const App: React.FC = () => {
     setGridSize(prev => {
         if (direction === 'row') {
             if (prev.rows >= MAX_ROWS) return prev;
-            // Generate larger batch for smoother scrolling
-            return { ...prev, rows: Math.min(prev.rows + EXPANSION_BATCH, MAX_ROWS) };
+            return { ...prev, rows: Math.min(prev.rows + EXPANSION_BATCH_ROWS, MAX_ROWS) };
         } else {
             if (prev.cols >= MAX_COLS) return prev;
-            // Generate larger batch for smoother scrolling
-            return { ...prev, cols: Math.min(prev.cols + EXPANSION_BATCH, MAX_COLS) };
+            return { ...prev, cols: Math.min(prev.cols + EXPANSION_BATCH_COLS, MAX_COLS) };
         }
     });
   }, []);

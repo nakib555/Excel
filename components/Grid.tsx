@@ -31,8 +31,8 @@ const HEADER_ROW_HEIGHT = 28;
 const MIN_COL_WIDTH = 30;
 const MIN_ROW_HEIGHT = 20;
 
-// Increased buffer to ensure smoother scrolling (render more rows ahead of view)
-const BUFFER = 20; 
+// Buffer to ensure smoother scrolling
+const BUFFER = 30; 
 
 const Grid: React.FC<GridProps> = ({
   size,
@@ -140,6 +140,24 @@ const Grid: React.FC<GridProps> = ({
     return cols;
   }, [visibleColStart, visibleColEnd]);
 
+  // --- AUTO EXPANSION ON ZOOM/RESIZE ---
+  useEffect(() => {
+     if (!containerRef.current) return;
+     const { scrollHeight, scrollWidth, clientHeight, clientWidth } = containerRef.current;
+     
+     // Check if we need to expand grid to fill viewport
+     const THRESHOLD = 1000;
+     const needsRows = scrollHeight <= clientHeight + THRESHOLD;
+     const needsCols = scrollWidth <= clientWidth + THRESHOLD;
+     
+     if (needsRows && !loadingRef.current) {
+        onExpandGrid('row');
+     }
+     
+     if (needsCols && !loadingRef.current) {
+        onExpandGrid('col');
+     }
+  }, [scale, size, onExpandGrid]);
 
   // --- EVENT HANDLERS ---
 
@@ -267,25 +285,28 @@ const Grid: React.FC<GridProps> = ({
         onScroll={handleScroll}
         onWheel={handleWheel}
     >
-      <div className="inline-block bg-white min-w-full pb-20 pr-20 relative">
+      <div className="inline-block bg-white min-w-full pb-32 pr-32 relative">
         
         {/* Sticky Headers Container */}
-        <div className="sticky top-0 z-20 bg-slate-50 shadow-sm border-b border-slate-300 flex">
+        <div className="sticky top-0 z-20 bg-[#f8f9fa] shadow-sm flex">
           {/* Corner */}
-          <div className="flex-shrink-0 bg-slate-100 border-r border-slate-300 border-b border-slate-300 sticky left-0 z-30" 
+          <div className="flex-shrink-0 bg-[#f8f9fa] border-r border-slate-300 border-b border-slate-300 sticky left-0 z-30 group hover:bg-slate-200 transition-colors cursor-pointer" 
                style={{ 
                  width: sHeaderColWidth, 
                  height: sHeaderRowHeight,
                  transition: 'width 0.1s ease-out, height 0.1s ease-out'
-               }} 
+               }}
+               onClick={() => {
+                   // Placeholder for Select All
+               }}
           >
               <div className="w-full h-full relative">
-                  <div className="absolute bottom-0 right-0 w-0 h-0 border-l-[10px] border-l-transparent border-b-[10px] border-b-slate-400/50"></div>
+                  <div className="absolute bottom-1 right-1 w-0 h-0 border-l-[8px] border-l-transparent border-b-[8px] border-b-slate-400"></div>
               </div>
           </div>
           
           {/* Virtualized Column Headers */}
-          <div className="flex">
+          <div className="flex border-b border-slate-300">
             {/* Left Spacer - offloaded headers */}
             <div style={{ width: spacerLeft, height: 1, flexShrink: 0 }} />
             
@@ -298,8 +319,10 @@ const Grid: React.FC<GridProps> = ({
                 <div
                     key={`header-${col}`}
                     className={cn(
-                    "flex items-center justify-center font-semibold border-r border-slate-300 select-none transition-colors relative flex-shrink-0 group",
-                    isActiveCol ? "bg-emerald-50 text-emerald-700 border-b-emerald-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                    "flex items-center justify-center font-semibold border-r border-slate-300 select-none transition-colors relative flex-shrink-0 group box-border",
+                    isActiveCol 
+                        ? "bg-emerald-50 text-emerald-700 font-bold" 
+                        : "bg-[#f8f9fa] text-slate-700 hover:bg-[#e9ecef] hover:text-black"
                     )}
                     style={{ 
                       width, 
@@ -307,10 +330,13 @@ const Grid: React.FC<GridProps> = ({
                       fontSize: `${12 * scale}px`,
                       transition: 'width 0.1s ease-out, height 0.1s ease-out, font-size 0.1s ease-out'
                     }}
+                    onClick={(e) => {
+                        if(!e.shiftKey) onCellClick(getCellId(col, 0), false); // Needs improved col selection logic
+                    }}
                 >
                     {colLetter}
                     <div className={cn("absolute bottom-0 left-0 right-0 h-[2px]", isActiveCol ? "bg-emerald-500" : "bg-transparent")} />
-                    <div className="absolute right-0 top-0 bottom-0 w-[6px] translate-x-1/2 cursor-col-resize hover:bg-primary-500/50 transition-colors z-20"
+                    <div className="absolute right-0 top-0 bottom-0 w-[5px] translate-x-1/2 cursor-col-resize hover:bg-emerald-500/50 transition-colors z-20"
                          onMouseDown={(e) => startResize(e, 'col', col, width)}
                     />
                 </div>
@@ -336,8 +362,10 @@ const Grid: React.FC<GridProps> = ({
                 {/* Row Header - Sticky Left */}
                 <div
                   className={cn(
-                     "sticky left-0 z-10 flex items-center justify-center font-semibold border-r border-b border-slate-300 select-none transition-colors flex-shrink-0 relative group",
-                     isActiveRow ? "bg-emerald-50 text-emerald-700 border-r-emerald-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                     "sticky left-0 z-10 flex items-center justify-center font-semibold border-r border-b border-slate-300 select-none transition-colors flex-shrink-0 relative group box-border",
+                     isActiveRow 
+                        ? "bg-emerald-50 text-emerald-700 font-bold border-r-emerald-500" 
+                        : "bg-[#f8f9fa] text-slate-700 hover:bg-[#e9ecef] hover:text-black"
                   )}
                   style={{ 
                     width: sHeaderColWidth, 
@@ -345,10 +373,12 @@ const Grid: React.FC<GridProps> = ({
                     fontSize: `${12 * scale}px`,
                     transition: 'width 0.1s ease-out, height 0.1s ease-out, font-size 0.1s ease-out'
                   }}
+                  onClick={(e) => {
+                       if(!e.shiftKey) onCellClick(getCellId(0, row), false); // Needs improved row selection logic
+                  }}
                 >
                   {row + 1}
-                  <div className={cn("absolute top-0 right-0 bottom-0 w-[2px]", isActiveRow ? "bg-emerald-500" : "bg-transparent")} />
-                  <div className="absolute bottom-0 left-0 right-0 h-[6px] translate-y-1/2 cursor-row-resize hover:bg-primary-500/50 transition-colors z-20"
+                  <div className="absolute bottom-0 left-0 right-0 h-[5px] translate-y-1/2 cursor-row-resize hover:bg-emerald-500/50 transition-colors z-20"
                       onMouseDown={(e) => startResize(e, 'row', row, height)}
                   />
                 </div>
@@ -392,7 +422,7 @@ const Grid: React.FC<GridProps> = ({
         {isExpanding && (
            <div className="absolute bottom-4 right-4 z-50 bg-white/90 backdrop-blur border border-slate-200 shadow-elevation px-3 py-2 rounded-full flex items-center gap-2 animate-in fade-in duration-200 slide-in-from-bottom-2">
                <Loader2 className="animate-spin text-emerald-600" size={16} />
-               <span className="text-xs font-medium text-slate-600">Expanding grid...</span>
+               <span className="text-xs font-medium text-slate-600">Generating cells...</span>
            </div>
         )}
       </div>
