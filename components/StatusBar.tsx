@@ -106,7 +106,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ selectionCount, stats, zoom, onZo
                       type="range"
                       min="10"
                       max="400"
-                      step="10"
+                      step="1" 
                       value={displayZoom}
                       onChange={(e) => onZoomChange(Number(e.target.value) / 100)}
                       className="w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer range-slider focus:outline-none"
@@ -118,7 +118,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ selectionCount, stats, zoom, onZo
                 className="min-w-[3.5rem] text-center font-bold text-white tabular-nums text-xs hover:bg-white/10 rounded py-0.5 transition-colors select-none"
                 title="Reset to 100%"
             >
-                {displayZoom.toFixed(1)}%
+                {displayZoom.toFixed(0)}%
             </button>
 
             <button

@@ -93,13 +93,14 @@ const Cell = memo(({
     minWidth: width,
     minHeight: height,
     fontSize: `${scaledFontSize}px`,
+    // Smooth transition for zoom operations
+    transition: 'width 0.1s ease-out, height 0.1s ease-out, font-size 0.1s ease-out',
   };
 
   return (
     <div
       className={cn(
         "relative box-border flex items-center px-[4px] overflow-hidden select-none outline-none flex-shrink-0 border-r border-b border-slate-200",
-        // Additional dynamic classes can be added here cleanly
       )}
       style={style}
       onClick={(e) => onClick(id, e.shiftKey)}

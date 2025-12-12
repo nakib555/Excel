@@ -1,15 +1,9 @@
-import React, { useEffect, useRef, memo, lazy, Suspense, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useRef, memo, useCallback, useState, useMemo } from 'react';
 import { CellId, CellData, GridSize } from '../types';
 import { numToChar, getCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
 import { CellSkeleton } from './Skeletons';
-
-// Lazy load Cell component
-const Cell = lazy(async () => {
-    // Keep a tiny delay to allow the UI thread to breathe during massive scrolling operations
-    await new Promise(resolve => setTimeout(resolve, 0)); 
-    return import('./Cell');
-});
+import Cell from './Cell'; // Direct import for performance
 
 interface GridProps {
   size: GridSize;
@@ -26,6 +20,7 @@ interface GridProps {
   onColumnResize: (id: string, width: number) => void;
   onRowResize: (rowIdx: number, height: number) => void;
   onExpandGrid: (direction: 'row' | 'col') => void;
+  onZoom: (delta: number) => void;
 }
 
 const DEFAULT_COL_WIDTH = 100;
@@ -52,7 +47,8 @@ const Grid: React.FC<GridProps> = ({
   onNavigate,
   onColumnResize,
   onRowResize,
-  onExpandGrid
+  onExpandGrid,
+  onZoom
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -155,7 +151,28 @@ const Grid: React.FC<GridProps> = ({
     else if (e.key === 'ArrowRight') { onNavigate('right'); handled = true; }
     else if (e.key === 'Tab') { onNavigate(e.shiftKey ? 'left' : 'right'); handled = true; }
     else if (e.key === 'Enter') { onNavigate(e.shiftKey ? 'up' : 'down'); handled = true; }
+    
+    // Zoom shortcut: Ctrl + + / -
+    if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        onZoom(0.1);
+        handled = true;
+    } else if (e.ctrlKey && e.key === '-') {
+        e.preventDefault();
+        onZoom(-0.1);
+        handled = true;
+    }
+
     if (handled) { e.preventDefault(); e.stopPropagation(); }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey) {
+        e.preventDefault();
+        // Determine direction. deltaY > 0 is scrolling down (zoom out), deltaY < 0 is scrolling up (zoom in)
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        onZoom(delta);
+    }
   };
 
   // Resize Handlers
@@ -240,6 +257,7 @@ const Grid: React.FC<GridProps> = ({
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onScroll={handleScroll}
+        onWheel={handleWheel}
     >
       <div className="inline-block bg-white min-w-full pb-20 pr-20">
         
@@ -247,7 +265,11 @@ const Grid: React.FC<GridProps> = ({
         <div className="sticky top-0 z-20 bg-slate-50 shadow-sm border-b border-slate-300 flex">
           {/* Corner */}
           <div className="flex-shrink-0 bg-slate-100 border-r border-slate-300 border-b border-slate-300 sticky left-0 z-30" 
-               style={{ width: sHeaderColWidth, height: sHeaderRowHeight }} 
+               style={{ 
+                 width: sHeaderColWidth, 
+                 height: sHeaderRowHeight,
+                 transition: 'width 0.1s ease-out, height 0.1s ease-out'
+               }} 
           >
               <div className="w-full h-full relative">
                   <div className="absolute bottom-0 right-0 w-0 h-0 border-l-[10px] border-l-transparent border-b-[10px] border-b-slate-400/50"></div>
@@ -271,7 +293,12 @@ const Grid: React.FC<GridProps> = ({
                     "flex items-center justify-center font-semibold border-r border-slate-300 select-none transition-colors relative flex-shrink-0 group",
                     isActiveCol ? "bg-emerald-50 text-emerald-700 border-b-emerald-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                     )}
-                    style={{ width, height: sHeaderRowHeight, fontSize: `${12 * scale}px` }}
+                    style={{ 
+                      width, 
+                      height: sHeaderRowHeight, 
+                      fontSize: `${12 * scale}px`,
+                      transition: 'width 0.1s ease-out, height 0.1s ease-out, font-size 0.1s ease-out'
+                    }}
                 >
                     {colLetter}
                     <div className={cn("absolute bottom-0 left-0 right-0 h-[2px]", isActiveCol ? "bg-emerald-500" : "bg-transparent")} />
@@ -304,7 +331,12 @@ const Grid: React.FC<GridProps> = ({
                      "sticky left-0 z-10 flex items-center justify-center font-semibold border-r border-b border-slate-300 select-none transition-colors flex-shrink-0 relative group",
                      isActiveRow ? "bg-emerald-50 text-emerald-700 border-r-emerald-400" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                   )}
-                  style={{ width: sHeaderColWidth, height: height, fontSize: `${12 * scale}px` }}
+                  style={{ 
+                    width: sHeaderColWidth, 
+                    height: height, 
+                    fontSize: `${12 * scale}px`,
+                    transition: 'width 0.1s ease-out, height 0.1s ease-out, font-size 0.1s ease-out'
+                  }}
                 >
                   {row + 1}
                   <div className={cn("absolute top-0 right-0 bottom-0 w-[2px]", isActiveRow ? "bg-emerald-500" : "bg-transparent")} />
@@ -323,22 +355,21 @@ const Grid: React.FC<GridProps> = ({
                   const width = getColWidth(col);
 
                   return (
-                    <Suspense key={id} fallback={<CellSkeleton width={width} height={height} />}>
-                        <Cell
-                          id={id}
-                          data={cellData}
-                          isSelected={activeCell === id}
-                          isActive={activeCell === id}
-                          isInRange={isCellInRange(id)}
-                          width={width}
-                          height={height}
-                          scale={scale}
-                          onClick={onCellClick}
-                          onDoubleClick={onCellDoubleClick}
-                          onChange={onCellChange}
-                          onNavigate={onNavigate}
-                        />
-                    </Suspense>
+                    <Cell
+                      key={id}
+                      id={id}
+                      data={cellData}
+                      isSelected={activeCell === id}
+                      isActive={activeCell === id}
+                      isInRange={isCellInRange(id)}
+                      width={width}
+                      height={height}
+                      scale={scale}
+                      onClick={onCellClick}
+                      onDoubleClick={onCellDoubleClick}
+                      onChange={onCellChange}
+                      onNavigate={onNavigate}
+                    />
                   );
                 })}
               </div>

@@ -293,6 +293,10 @@ const App: React.FC = () => {
     if (activeCell) handleCellChange(activeCell, val);
   }, [activeCell, handleCellChange]);
 
+  const handleZoomWheel = useCallback((delta: number) => {
+    setZoom(prev => Math.min(4, Math.max(0.1, prev + delta)));
+  }, []);
+
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
         <Suspense fallback={<ToolbarSkeleton />}>
@@ -331,6 +335,7 @@ const App: React.FC = () => {
                 onColumnResize={handleColumnResize}
                 onRowResize={handleRowResize}
                 onExpandGrid={handleExpandGrid}
+                onZoom={handleZoomWheel}
               />
           </Suspense>
         </div>
