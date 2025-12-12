@@ -5,6 +5,7 @@ import {
 import { CellStyle } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DraggableScrollContainer, TabProps } from './toolbar/shared';
+import { RibbonTabSkeleton } from './Skeletons';
 import { cn } from '../utils';
 
 // Lazy loaded tabs
@@ -19,12 +20,6 @@ const ViewTab = React.lazy(() => import('./toolbar/ViewTab/index'));
 const AutomateTab = React.lazy(() => import('./toolbar/AutomateTab/index'));
 
 const TABS = ['File', 'Home', 'Insert', 'Draw', 'Page Layout', 'Formulas', 'Data', 'Review', 'View', 'Automate'];
-
-const TabLoading = () => (
-    <div className="flex h-full w-full items-center justify-center p-4">
-        <Loader2 className="animate-spin text-slate-300" size={24} />
-    </div>
-);
 
 const Toolbar: React.FC<TabProps> = (props) => {
   const [activeTab, setActiveTab] = useState('Home');
@@ -108,7 +103,7 @@ const Toolbar: React.FC<TabProps> = (props) => {
       <div className="bg-[#f8fafc] border-b border-slate-200 shadow-sm z-0 relative">
       <DraggableScrollContainer className="h-[100px] flex items-stretch px-2 md:px-4 w-full">
           <AnimatePresence mode='wait'>
-            <Suspense fallback={<TabLoading />}>
+            <Suspense fallback={<RibbonTabSkeleton />}>
                 {activeTab === 'Home' && <HomeTab {...props} key="home" />}
                 {activeTab === 'Insert' && <InsertTab {...props} key="insert" />}
                 {activeTab === 'Draw' && <DrawTab {...props} key="draw" />}
