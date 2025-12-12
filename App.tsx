@@ -158,6 +158,16 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
+  const handleSelectionDrag = useCallback((startId: string, endId: string) => {
+    setSheets(prevSheets => prevSheets.map(sheet => {
+        if (sheet.id !== activeSheetId) return sheet;
+        return {
+            ...sheet,
+            selectionRange: getRange(startId, endId)
+        };
+    }));
+  }, [activeSheetId]);
+
   const handleCellDoubleClick = useCallback((id: CellId) => {
     handleCellClick(id, false);
   }, [handleCellClick]);
@@ -179,7 +189,7 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
-  const handleNavigate = useCallback((direction: NavigationDirection) => {
+  const handleNavigate = useCallback((direction: NavigationDirection, isShift: boolean) => {
     if (!activeCell) return;
     
     let dRow = 0;
@@ -195,7 +205,7 @@ const App: React.FC = () => {
 
     const nextId = getNextCellId(activeCell, dRow, dCol, gridSize.rows, gridSize.cols);
     if (nextId && nextId !== activeCell) {
-        handleCellClick(nextId, false);
+        handleCellClick(nextId, isShift);
     }
   }, [activeCell, gridSize, handleCellClick]);
 
@@ -329,6 +339,7 @@ const App: React.FC = () => {
                 rowHeights={rowHeights} 
                 scale={zoom}
                 onCellClick={handleCellClick}
+                onSelectionDrag={handleSelectionDrag}
                 onCellDoubleClick={handleCellDoubleClick}
                 onCellChange={handleCellChange}
                 onNavigate={handleNavigate}

@@ -15,9 +15,10 @@ interface GridProps {
   rowHeights: Record<number, number>;
   scale?: number;
   onCellClick: (id: CellId, isShift: boolean) => void;
+  onSelectionDrag: (startId: string, endId: string) => void;
   onCellDoubleClick: (id: CellId) => void;
   onCellChange: (id: CellId, val: string) => void;
-  onNavigate: (direction: NavigationDirection) => void;
+  onNavigate: (direction: NavigationDirection, isShift: boolean) => void;
   onColumnResize: (id: string, width: number) => void;
   onRowResize: (rowIdx: number, height: number) => void;
   onExpandGrid: (direction: 'row' | 'col') => void;
@@ -40,6 +41,7 @@ const Grid: React.FC<GridProps> = ({
   rowHeights,
   scale = 1,
   onCellClick,
+  onSelectionDrag,
   onCellDoubleClick,
   onCellChange,
   onNavigate,
@@ -50,6 +52,10 @@ const Grid: React.FC<GridProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // Drag Selection State
+  const isDraggingRef = useRef(false);
+  const selectionStartRef = useRef<string | null>(null);
+
   // State to track scroll position for virtualization
   const [scrollState, setScrollState] = useState({ 
     scrollTop: 0, 
@@ -96,7 +102,6 @@ const Grid: React.FC<GridProps> = ({
     const defaultColW = DEFAULT_COL_WIDTH * scale;
 
     // Calculate dynamic buffer based on scale to keep screen filled
-    // We limit buffer to avoid rendering too many nodes at 25% zoom
     const rowBuffer = Math.min(50, Math.ceil(800 / Math.max(1, defaultRowH)));
     const colBuffer = Math.min(20, Math.ceil(800 / Math.max(1, defaultColW)));
 
@@ -172,12 +177,12 @@ const Grid: React.FC<GridProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'INPUT') return;
     let handled = false;
-    if (e.key === 'ArrowUp') { onNavigate('up'); handled = true; }
-    else if (e.key === 'ArrowDown') { onNavigate('down'); handled = true; }
-    else if (e.key === 'ArrowLeft') { onNavigate('left'); handled = true; }
-    else if (e.key === 'ArrowRight') { onNavigate('right'); handled = true; }
-    else if (e.key === 'Tab') { onNavigate(e.shiftKey ? 'left' : 'right'); handled = true; }
-    else if (e.key === 'Enter') { onNavigate(e.shiftKey ? 'up' : 'down'); handled = true; }
+    if (e.key === 'ArrowUp') { onNavigate('up', e.shiftKey); handled = true; }
+    else if (e.key === 'ArrowDown') { onNavigate('down', e.shiftKey); handled = true; }
+    else if (e.key === 'ArrowLeft') { onNavigate('left', e.shiftKey); handled = true; }
+    else if (e.key === 'ArrowRight') { onNavigate('right', e.shiftKey); handled = true; }
+    else if (e.key === 'Tab') { onNavigate(e.shiftKey ? 'left' : 'right', false); handled = true; }
+    else if (e.key === 'Enter') { onNavigate(e.shiftKey ? 'up' : 'down', false); handled = true; }
     
     // Zoom shortcut: Ctrl + + / -
     if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
@@ -200,6 +205,31 @@ const Grid: React.FC<GridProps> = ({
         onZoom(delta);
     }
   };
+
+  // Drag Selection Logic
+  const handleCellMouseDown = useCallback((id: string, isShift: boolean) => {
+      isDraggingRef.current = true;
+      if (!isShift) {
+        selectionStartRef.current = id;
+      }
+      onCellClick(id, isShift);
+  }, [onCellClick]);
+
+  const handleCellMouseEnter = useCallback((id: string) => {
+      if (isDraggingRef.current && selectionStartRef.current) {
+          onSelectionDrag(selectionStartRef.current, id);
+      }
+  }, [onSelectionDrag]);
+
+  // Global Mouse Up for drag end
+  useEffect(() => {
+      const handleMouseUp = () => {
+          isDraggingRef.current = false;
+          // Don't clear selectionStartRef immediately to allow shift-click expansions
+      }
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, []);
 
   // Resize Handlers
   useEffect(() => {
@@ -280,6 +310,12 @@ const Grid: React.FC<GridProps> = ({
       }
   }, []);
 
+  // Cell Navigation Wrapper to pass no-shift on edit finish
+  const handleCellNavigate = useCallback((direction: NavigationDirection) => {
+      // When cell finishes editing (Enter/Tab), we move active cell but don't extend selection usually
+      onNavigate(direction, false);
+  }, [onNavigate]);
+
   return (
     <div 
         ref={containerRef}
@@ -300,9 +336,6 @@ const Grid: React.FC<GridProps> = ({
                  width: sHeaderColWidth, 
                  height: sHeaderRowHeight,
                  transition: 'width 0.1s ease-out, height 0.1s ease-out'
-               }}
-               onClick={() => {
-                   // Placeholder for Select All
                }}
           >
               <div className="w-full h-full relative">
@@ -403,10 +436,11 @@ const Grid: React.FC<GridProps> = ({
                       width={width}
                       height={height}
                       scale={scale}
-                      onClick={onCellClick}
+                      onMouseDown={handleCellMouseDown}
+                      onMouseEnter={handleCellMouseEnter}
                       onDoubleClick={onCellDoubleClick}
                       onChange={onCellChange}
-                      onNavigate={onNavigate}
+                      onNavigate={handleCellNavigate}
                     />
                   );
                 })}

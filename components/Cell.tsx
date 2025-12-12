@@ -13,7 +13,8 @@ interface CellProps {
   width: number;
   height: number;
   scale?: number;
-  onClick: (id: string, isShift: boolean) => void;
+  onMouseDown: (id: string, isShift: boolean) => void;
+  onMouseEnter: (id: string) => void;
   onDoubleClick: (id: string) => void;
   onChange: (id: string, value: string) => void;
   onNavigate: (direction: NavigationDirection) => void;
@@ -28,7 +29,8 @@ const Cell = memo(({
   width, 
   height, 
   scale = 1,
-  onClick, 
+  onMouseDown, 
+  onMouseEnter,
   onDoubleClick, 
   onChange,
   onNavigate
@@ -104,7 +106,8 @@ const Cell = memo(({
         "relative box-border flex items-center px-[4px] overflow-hidden select-none outline-none flex-shrink-0 border-r border-b border-slate-200",
       )}
       style={style}
-      onClick={(e) => onClick(id, e.shiftKey)}
+      onMouseDown={(e) => onMouseDown(id, e.shiftKey)}
+      onMouseEnter={() => onMouseEnter(id)}
       onDoubleClick={handleDoubleClick}
     >
       {editing ? (
@@ -150,7 +153,9 @@ const Cell = memo(({
     prev.isInRange === next.isInRange &&
     prev.width === next.width &&
     prev.height === next.height &&
-    prev.scale === next.scale
+    prev.scale === next.scale &&
+    prev.onMouseDown === next.onMouseDown &&
+    prev.onMouseEnter === next.onMouseEnter
   );
 });
 
