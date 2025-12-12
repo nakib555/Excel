@@ -46,25 +46,25 @@ const StatusBar: React.FC<StatusBarProps> = ({ selectionCount, stats, zoom, onZo
         
         {/* Contextual Stats (Sum, Avg, Count) */}
         {stats && (
-           <div className="flex items-center gap-3 md:gap-6 animate-in fade-in duration-300 mr-2 md:mr-4">
+           <div className="flex items-center gap-3 md:gap-4 animate-in fade-in duration-300 mr-2 md:mr-4">
               <div className="flex md:hidden items-center gap-1 text-slate-300">
                   <span className="text-slate-400">Count:</span>
                   <span className="font-mono font-medium">{stats.count}</span>
               </div>
 
-              <div className="hidden md:flex items-center gap-4 text-slate-300">
+              <div className="hidden md:flex items-center gap-3 text-slate-300">
                   {stats.hasNumeric && (
-                      <div className="flex items-center gap-1.5 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                      <div className="flex items-center gap-1.5 hover:bg-white/10 px-1 py-0.5 rounded cursor-pointer transition-colors">
                           <span className="text-slate-400">Average:</span>
                           <span className="font-mono font-medium tracking-tight">{stats.average.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                       </div>
                   )}
-                  <div className="flex items-center gap-1.5 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                  <div className="flex items-center gap-1.5 hover:bg-white/10 px-1 py-0.5 rounded cursor-pointer transition-colors">
                       <span className="text-slate-400">Count:</span>
                       <span className="font-mono font-medium tracking-tight">{stats.count}</span>
                   </div>
                   {stats.hasNumeric && (
-                      <div className="flex items-center gap-1.5 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                      <div className="flex items-center gap-1.5 hover:bg-white/10 px-1 py-0.5 rounded cursor-pointer transition-colors">
                           <span className="text-slate-400">Sum:</span>
                           <span className="font-mono font-medium tracking-tight">{stats.sum.toLocaleString()}</span>
                       </div>
