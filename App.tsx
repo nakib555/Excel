@@ -19,12 +19,12 @@ const Grid = lazy(() => import('./components/Grid'));
 const SheetTabs = lazy(() => import('./components/SheetTabs'));
 const StatusBar = lazy(() => import('./components/StatusBar'));
 
-// Initial Configuration
+// Configuration
 const INITIAL_ROWS = 50;
 const INITIAL_COLS = 26; // A-Z
-const MAX_ROWS = 1000000;
-const MAX_COLS = 1000000;
-const EXPANSION_BATCH = 10;
+const MAX_ROWS = 1000000; // Support up to 1 Million rows
+const MAX_COLS = 16384;   // Standard Excel column limit
+const EXPANSION_BATCH = 10; // Generate 10 rows/cols at a time as requested
 
 // Initial sample data generation helper
 const generateInitialData = (): Record<CellId, CellData> => {
@@ -102,8 +102,6 @@ const App: React.FC = () => {
         const cell = cells[id];
         if (cell && cell.value) {
             count++;
-            // Simple parsing to handle basic numbers. 
-            // In a real app, this would need to handle formatted currency strings, etc.
             const cleanValue = cell.value.replace(/[^0-9.-]+/g,"");
             const num = parseFloat(cleanValue);
             if (!isNaN(num) && cell.value.trim() !== '') {
@@ -136,7 +134,6 @@ const App: React.FC = () => {
       keys.forEach(key => {
          nextCells[key].value = evaluateFormula(nextCells[key].raw, nextCells);
       });
-      // Double pass for dependencies (simple implementation)
       keys.forEach(key => {
          nextCells[key].value = evaluateFormula(nextCells[key].raw, nextCells);
       });
@@ -159,7 +156,6 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
-  // Stable wrapper for double click to prevent implicit function creation in render
   const handleCellDoubleClick = useCallback((id: CellId) => {
     handleCellClick(id, false);
   }, [handleCellClick]);
@@ -225,9 +221,11 @@ const App: React.FC = () => {
     setGridSize(prev => {
         if (direction === 'row') {
             if (prev.rows >= MAX_ROWS) return prev;
+            // Generate 10 rows (EXPANSION_BATCH)
             return { ...prev, rows: Math.min(prev.rows + EXPANSION_BATCH, MAX_ROWS) };
         } else {
             if (prev.cols >= MAX_COLS) return prev;
+            // Generate 10 columns
             return { ...prev, cols: Math.min(prev.cols + EXPANSION_BATCH, MAX_COLS) };
         }
     });
