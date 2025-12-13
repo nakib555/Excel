@@ -19,7 +19,7 @@ export interface CellData {
   id: CellId;
   raw: string;      // The user input (e.g., "=SUM(A1:A5)" or "100")
   value: string;    // The computed display value (e.g., "500")
-  style: CellStyle;
+  styleId?: string; // Memory Optimization: Reference to a style in the Sheet's style registry
 }
 
 export interface SheetState {
@@ -35,6 +35,7 @@ export interface Sheet {
   id: string;
   name: string;
   cells: Record<CellId, CellData>;
+  styles: Record<string, CellStyle>; // Registry of unique styles (Flyweight pattern)
   dependentsMap: Record<CellId, CellId[]>; // Dependency Graph: Cell -> [Dependents]
   activeCell: CellId | null;
   selectionRange: CellId[] | null;

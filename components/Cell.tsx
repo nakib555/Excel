@@ -1,6 +1,6 @@
 
 import React, { memo, useState, useRef, useEffect } from 'react';
-import { CellData } from '../types';
+import { CellData, CellStyle } from '../types';
 import { cn, formatCellValue } from '../utils';
 
 export type NavigationDirection = 'up' | 'down' | 'left' | 'right' | 'none';
@@ -8,13 +8,14 @@ export type NavigationDirection = 'up' | 'down' | 'left' | 'right' | 'none';
 interface CellProps {
   id: string;
   data: CellData;
+  style: CellStyle; // Resolved style passed from parent
   isSelected: boolean;
   isActive: boolean;
   isInRange: boolean;
   width: number;
   height: number;
   scale?: number;
-  isGhost?: boolean; // New prop for Skeleton/Ghost mode
+  isGhost?: boolean; 
   onMouseDown: (id: string, isShift: boolean) => void;
   onMouseEnter: (id: string) => void;
   onDoubleClick: (id: string) => void;
@@ -25,6 +26,7 @@ interface CellProps {
 const Cell = memo(({ 
   id, 
   data, 
+  style: resolvedStyle, // Renamed to avoid confusion
   isSelected, 
   isActive, 
   isInRange,
@@ -71,10 +73,10 @@ const Cell = memo(({
 
   // --- LOD (Level of Detail) Optimization ---
   const isMicroView = scale < 0.25; 
-  const fontSize = Math.max(scale < 0.6 ? 7 : 9, (data.style.fontSize || 13) * scale);
+  const fontSize = Math.max(scale < 0.6 ? 7 : 9, (resolvedStyle.fontSize || 13) * scale);
 
   // Style Calculation - Optimized with strict containment
-  const style: React.CSSProperties = {
+  const containerStyle: React.CSSProperties = {
     width: width,
     height: height,
     minWidth: width,
@@ -88,20 +90,20 @@ const Cell = memo(({
       return (
         <div
           className="relative box-border border-r border-b border-slate-200 bg-white skeleton-shine"
-          style={style}
+          style={containerStyle}
         />
       );
   }
 
-  const textAlign = data.style.align || 'left';
-  const fontWeight = data.style.bold ? '600' : '400';
-  const fontStyle = data.style.italic ? 'italic' : 'normal';
-  const textDecoration = data.style.underline ? 'underline' : 'none';
-  const color = data.style.color || '#0f172a';
-  const backgroundColor = data.style.bg || (isInRange ? 'rgba(16, 185, 129, 0.1)' : '#fff');
-  const whiteSpace = data.style.wrapText ? 'normal' : 'nowrap';
+  const textAlign = resolvedStyle.align || 'left';
+  const fontWeight = resolvedStyle.bold ? '600' : '400';
+  const fontStyle = resolvedStyle.italic ? 'italic' : 'normal';
+  const textDecoration = resolvedStyle.underline ? 'underline' : 'none';
+  const color = resolvedStyle.color || '#0f172a';
+  const backgroundColor = resolvedStyle.bg || (isInRange ? 'rgba(16, 185, 129, 0.1)' : '#fff');
+  const whiteSpace = resolvedStyle.wrapText ? 'normal' : 'nowrap';
   
-  const displayValue = formatCellValue(data.value, data.style);
+  const displayValue = formatCellValue(data.value, resolvedStyle);
 
   return (
     <div
@@ -111,7 +113,7 @@ const Cell = memo(({
         isSelected && !isActive && "z-10" 
       )}
       style={{
-          ...style,
+          ...containerStyle,
           textAlign,
           fontWeight,
           fontStyle,
@@ -142,7 +144,7 @@ const Cell = memo(({
         />
       ) : (
         !isMicroView && displayValue && (
-            <span className={cn("w-full pointer-events-none block", !data.style.wrapText && "truncate")}>
+            <span className={cn("w-full pointer-events-none block", !resolvedStyle.wrapText && "truncate")}>
                 {displayValue}
             </span>
         )
@@ -163,6 +165,7 @@ const Cell = memo(({
 }, (prev, next) => {
   return (
     prev.data === next.data &&
+    prev.style === next.style && // Style object ref check (Flyweight helps here)
     prev.isSelected === next.isSelected &&
     prev.isActive === next.isActive &&
     prev.isInRange === next.isInRange &&

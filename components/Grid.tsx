@@ -1,6 +1,7 @@
 
+
 import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense, lazy } from 'react';
-import { CellId, CellData, GridSize } from '../types';
+import { CellId, CellData, GridSize, CellStyle } from '../types';
 import { numToChar, getCellId, parseCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
 import { Loader2 } from 'lucide-react';
@@ -32,6 +33,7 @@ const OFFLOAD_DELAY_MS = 2000; // Faster cleanup (2s)
 interface GridProps {
   size: GridSize;
   cells: Record<CellId, CellData>;
+  styles: Record<string, CellStyle>;
   activeCell: CellId | null;
   selectionRange: CellId[] | null;
   columnWidths: Record<string, number>;
@@ -51,6 +53,7 @@ interface GridProps {
 const Grid: React.FC<GridProps> = ({
   size,
   cells,
+  styles,
   activeCell,
   selectionRange,
   columnWidths,
@@ -480,6 +483,7 @@ const Grid: React.FC<GridProps> = ({
                         spacerRight={spacerRight}
                         getColW={getColW}
                         cells={cells}
+                        styles={styles}
                         activeCell={activeCell}
                         selectionBounds={selectionBounds} // Pass bounds O(1)
                         scale={scale}

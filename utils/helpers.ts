@@ -88,7 +88,7 @@ export const getNextCellId = (currentId: string, dRow: number, dCol: number, max
 /**
  * Formats a cell value based on its style configuration
  */
-export const formatCellValue = (value: string, style: CellStyle): string => {
+export const formatCellValue = (value: string, style: CellStyle = {}): string => {
   if (!value || value === '#ERR') return value;
   const num = parseFloat(value);
   if (isNaN(num)) return value;
@@ -119,4 +119,46 @@ export const formatCellValue = (value: string, style: CellStyle): string => {
     default:
       return value;
   }
+};
+
+/**
+ * MEMORY COMPRESSION HELPERS (Flyweight Pattern)
+ */
+
+// Generate a deterministic hash for a style object
+export const hashStyle = (style: CellStyle): string => {
+    // Sort keys to ensure {a:1, b:2} === {b:2, a:1}
+    const keys = Object.keys(style).sort() as Array<keyof CellStyle>;
+    if (keys.length === 0) return "";
+    
+    // Create a compact string representation
+    return keys.map(k => `${k}:${style[k]}`).join('|');
+};
+
+// Find or Create a style in the registry
+export const getStyleId = (
+    registry: Record<string, CellStyle>, 
+    newStyle: CellStyle
+): { id: string, registry: Record<string, CellStyle> } => {
+    const hash = hashStyle(newStyle);
+    if (!hash) return { id: "", registry }; // Empty style
+
+    // Check if style already exists (Reverse lookup could be optimized with a secondary map, but for now linear search or existing check)
+    // To be perfectly safe and simple without secondary maps: Use the Hash as the ID if short enough, 
+    // or assume the registry keys ARE the unique IDs we generated.
+    
+    // Implementation: Search for existing value
+    // This O(N) lookup is fine because N (number of unique styles) is typically small (< 1000) even in large sheets.
+    for (const [id, style] of Object.entries(registry)) {
+        if (hashStyle(style) === hash) {
+            return { id, registry };
+        }
+    }
+
+    // Create new ID
+    const newId = `s${Object.keys(registry).length + 1}`; // e.g. "s1", "s2"
+    return {
+        id: newId,
+        registry: { ...registry, [newId]: newStyle }
+    };
 };

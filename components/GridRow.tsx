@@ -1,7 +1,9 @@
 
+
 import React, { memo, Suspense, lazy } from 'react';
 import { getCellId, parseCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
+import { CellStyle } from '../types';
 
 const Cell = lazy(() => import('./Cell'));
 
@@ -13,6 +15,7 @@ interface GridRowProps {
   spacerRight: number;
   getColW: (i: number) => number;
   cells: any;
+  styles: Record<string, CellStyle>; // Style Registry
   activeCell: string | null;
   selectionBounds: { minRow: number, maxRow: number, minCol: number, maxCol: number } | null;
   scale: number;
@@ -36,6 +39,7 @@ const GridRow = memo(({
     spacerRight, 
     getColW, 
     cells, 
+    styles,
     activeCell, 
     selectionBounds, 
     scale, 
@@ -89,7 +93,11 @@ const GridRow = memo(({
             {/* Cells Loop */}
             {visibleCols.map((col: number) => {
                 const id = getCellId(col, rowIdx);
-                const data = cells[id] || { id, raw: '', value: '', style: {} };
+                // Default structure if missing
+                const data = cells[id] || { id, raw: '', value: '' };
+                // Resolve Style from Flyweight Registry
+                const cellStyle = (data.styleId && styles[data.styleId]) ? styles[data.styleId] : {};
+
                 const isSelected = activeCell === id;
                 // O(1) Check using bounds
                 const isInRange = isRowSelected && selectionBounds 
@@ -111,6 +119,7 @@ const GridRow = memo(({
                         <Cell 
                             id={id} 
                             data={data}
+                            style={cellStyle}
                             isSelected={isSelected}
                             isActive={isSelected} 
                             isInRange={isInRange}
@@ -142,6 +151,7 @@ const GridRow = memo(({
     if (prev.spacerLeft !== next.spacerLeft) return false;
     if (prev.spacerRight !== next.spacerRight) return false;
     if (prev.cells !== next.cells) return false;
+    if (prev.styles !== next.styles) return false; // Registry Check
 
     // 2. Active Cell Check
     const isRowInvolvedActive = (id: string | null, rowIdx: number) => {
@@ -160,18 +170,13 @@ const GridRow = memo(({
     const b1 = prev.selectionBounds;
     const b2 = next.selectionBounds;
     
-    // If exact same object or both null, equal
     if (b1 === b2) return true;
-    if (!b1 || !b2) return false; // One is null, one isn't
+    if (!b1 || !b2) return false;
     
-    // Deep comparison of bounds
     if (b1.minRow !== b2.minRow || b1.maxRow !== b2.maxRow || b1.minCol !== b2.minCol || b1.maxCol !== b2.maxCol) {
-        // Bounds changed. Does it affect THIS row?
-        // If the row was inside the old bounds OR is inside the new bounds, we must re-render.
         const row = prev.rowIdx;
         const wasIn = row >= b1.minRow && row <= b1.maxRow;
         const isIn = row >= b2.minRow && row <= b2.maxRow;
-        
         if (wasIn || isIn) return false;
     }
 
