@@ -17,7 +17,7 @@ export const CellSkeleton = memo(({ width, height }: { width: number; height: nu
       minWidth: width, 
       minHeight: height 
     }} 
-    className="border-r border-b border-slate-200 bg-white box-border overflow-hidden select-none relative skeleton-shine"
+    className="border-r border-b border-slate-200 box-border overflow-hidden select-none relative skeleton-shine flex-shrink-0"
   />
 ));
 

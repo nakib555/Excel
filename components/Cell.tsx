@@ -35,7 +35,7 @@ const Cell = memo(({
   scale = 1,
   isGhost = false,
   onMouseDown, 
-  onMouseEnter,
+  onMouseEnter, 
   onDoubleClick, 
   onChange,
   onNavigate
@@ -89,7 +89,7 @@ const Cell = memo(({
   if (isGhost) {
       return (
         <div
-          className="relative box-border border-r border-b border-slate-200 bg-white skeleton-shine"
+          className="relative box-border border-r border-b border-slate-200 skeleton-shine flex-shrink-0"
           style={containerStyle}
         />
       );
