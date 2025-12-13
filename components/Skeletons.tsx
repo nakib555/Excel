@@ -8,6 +8,7 @@ const Skel = memo(({ className, style }: { className?: string; style?: React.CSS
   <div className={cn("skeleton-shine rounded-sm", className)} style={style} />
 ));
 
+// Fully wrapping cell skeleton for Grid
 export const CellSkeleton = memo(({ width, height }: { width: number; height: number }) => (
   <div 
     style={{ 
@@ -16,11 +17,48 @@ export const CellSkeleton = memo(({ width, height }: { width: number; height: nu
       minWidth: width, 
       minHeight: height 
     }} 
-    className="border-r border-b border-slate-100 bg-white box-border overflow-hidden select-none relative p-1"
-  >
-    <Skel className="w-full h-full rounded-sm opacity-50" />
-  </div>
+    className="border-r border-b border-slate-200 bg-slate-50 box-border overflow-hidden select-none relative skeleton-shine"
+  />
 ));
+
+export const RowSkeleton = memo(({ 
+    height, 
+    visibleCols, 
+    headerColW, 
+    spacerLeft, 
+    spacerRight,
+    getColW 
+}: { 
+    height: number; 
+    visibleCols: number[]; 
+    headerColW: number; 
+    spacerLeft: number; 
+    spacerRight: number;
+    getColW: (i: number) => number;
+}) => {
+    return (
+        <div className="flex" style={{ width: 'max-content', height }}>
+             {/* Row Header Ghost */}
+            <div 
+                className="sticky left-0 z-10 border-r border-b border-slate-300 bg-[#f8f9fa] flex-shrink-0"
+                style={{ width: headerColW, height }}
+            >
+                <Skel className="w-full h-full opacity-50" />
+            </div>
+
+            {/* Spacer Left */}
+            <div style={{ width: spacerLeft, height: '100%', flexShrink: 0 }} />
+
+            {/* Cell Ghosts */}
+            {visibleCols.map(col => (
+                <CellSkeleton key={col} width={getColW(col)} height={height} />
+            ))}
+
+            {/* Spacer Right */}
+            <div style={{ width: spacerRight, height: '100%', flexShrink: 0 }} />
+        </div>
+    )
+});
 
 export const TabItemSkeleton = memo(() => (
     <div className="flex items-center px-4 py-1.5 min-w-[100px] h-full justify-center bg-transparent border-t-2 border-transparent">
@@ -180,13 +218,11 @@ export const GridSkeleton = memo(() => (
                       backgroundSize: '100px 28px'
                   }}
               />
-              {/* Scattered Ghost Cells */}
-              <div className="absolute inset-0 p-2 grid grid-cols-6 gap-y-12 gap-x-8 opacity-60">
-                  <Skel className="w-full h-4 col-start-2 row-start-2 bg-slate-100" />
-                  <Skel className="w-2/3 h-4 col-start-3 row-start-4 bg-slate-100" />
-                  <Skel className="w-full h-4 col-start-1 row-start-6 bg-slate-100" />
-                  <Skel className="w-3/4 h-4 col-start-4 row-start-8 bg-slate-100" />
-                  <Skel className="w-full h-4 col-start-2 row-start-10 bg-slate-100" />
+              {/* Full grid ghost effect */}
+              <div className="absolute inset-0 grid grid-cols-6 grid-rows-12">
+                   {[...Array(20)].map((_, i) => (
+                       <div key={i} className="col-span-1 row-span-1 border-r border-b border-slate-100 skeleton-shine opacity-30"></div>
+                   ))}
               </div>
           </div>
       </div>

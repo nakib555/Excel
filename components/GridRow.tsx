@@ -1,9 +1,9 @@
 
-
 import React, { memo, Suspense, lazy } from 'react';
 import { getCellId, parseCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
 import { CellStyle } from '../types';
+import { CellSkeleton } from './Skeletons';
 
 const Cell = lazy(() => import('./Cell'));
 
@@ -109,12 +109,7 @@ const GridRow = memo(({
                 return (
                     <Suspense 
                         key={id} 
-                        fallback={
-                            <div 
-                                className="relative box-border border-r border-b border-slate-200 bg-white skeleton-shine"
-                                style={{ width, height, minWidth: width, minHeight: height }}
-                            />
-                        }
+                        fallback={<CellSkeleton width={width} height={height} />}
                     >
                         <Cell 
                             id={id} 

@@ -1,10 +1,10 @@
 
-
 import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense, lazy } from 'react';
 import { CellId, CellData, GridSize, CellStyle } from '../types';
 import { numToChar, getCellId, parseCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
 import { Loader2 } from 'lucide-react';
+import { RowSkeleton } from './Skeletons';
 
 // Lazy load GridRow to handle sheet expansion and scrolling efficiently
 const GridRow = lazy(() => import('./GridRow'));
@@ -442,7 +442,7 @@ const Grid: React.FC<GridProps> = ({
                     return (
                         <Suspense 
                             key={col}
-                            fallback={<div className="border-r border-slate-300 bg-[#f8f9fa]" style={{ width, height: headerRowH, flexShrink: 0 }} />}
+                            fallback={<div className="border-r border-slate-300 bg-[#f8f9fa] skeleton-shine" style={{ width, height: headerRowH, flexShrink: 0 }} />}
                         >
                             <ColumnHeader 
                                 col={col}
@@ -469,10 +469,14 @@ const Grid: React.FC<GridProps> = ({
                 <Suspense 
                     key={row} 
                     fallback={
-                        <div className="flex" style={{ height: getRowH(row), width: 'max-content' }}>
-                            <div className="sticky left-0 z-10 border-r border-b border-slate-300 bg-[#f8f9fa]" style={{ width: headerColW, height: getRowH(row) }} />
-                            <div className="flex-1 border-b border-slate-100 bg-white" />
-                        </div>
+                        <RowSkeleton 
+                            height={getRowH(row)} 
+                            visibleCols={visibleCols} 
+                            headerColW={headerColW} 
+                            spacerLeft={spacerLeft} 
+                            spacerRight={spacerRight}
+                            getColW={getColW}
+                        />
                     }
                 >
                     <GridRow 
