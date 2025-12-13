@@ -9,15 +9,20 @@ const Skel = memo(({ className, style }: { className?: string; style?: React.CSS
 ));
 
 // Fully wrapping cell skeleton for Grid
-export const CellSkeleton = memo(({ width, height }: { width: number; height: number }) => (
+export const CellSkeleton = memo(({ width, height, className }: { width: number; height: number; className?: string }) => (
   <div 
     style={{ 
       width, 
       height, 
       minWidth: width, 
-      minHeight: height 
+      minHeight: height,
+      contain: 'strict',
+      contentVisibility: 'auto'
     }} 
-    className="border-r border-b border-slate-200 box-border overflow-hidden select-none relative skeleton-shine flex-shrink-0"
+    className={cn(
+      "border-r border-b border-slate-200 box-border overflow-hidden select-none relative skeleton-shine flex-shrink-0 bg-slate-50",
+      className
+    )}
   />
 ));
 

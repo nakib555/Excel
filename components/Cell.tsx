@@ -2,6 +2,7 @@
 import React, { memo, useState, useRef, useEffect } from 'react';
 import { CellData, CellStyle } from '../types';
 import { cn, formatCellValue } from '../utils';
+import { CellSkeleton } from './Skeletons';
 
 export type NavigationDirection = 'up' | 'down' | 'left' | 'right' | 'none';
 
@@ -85,14 +86,9 @@ const Cell = memo(({
     contain: 'strict', 
   };
   
-  // Ghost Mode
+  // Ghost Mode - Use shared skeleton for consistency with lazy loading
   if (isGhost) {
-      return (
-        <div
-          className="relative box-border border-r border-b border-slate-200 skeleton-shine flex-shrink-0"
-          style={containerStyle}
-        />
-      );
+      return <CellSkeleton width={width} height={height} />;
   }
 
   const textAlign = resolvedStyle.align || 'left';
