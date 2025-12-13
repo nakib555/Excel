@@ -8,7 +8,7 @@ const Skel = memo(({ className, style }: { className?: string; style?: React.CSS
   <div className={cn("skeleton-shine rounded-sm", className)} style={style} />
 ));
 
-// Fully wrapping cell skeleton for Grid
+// Fully wrapping cell skeleton for Grid with Blurred Center Shine
 export const CellSkeleton = memo(({ width, height, className }: { width: number; height: number; className?: string }) => (
   <div 
     style={{ 
@@ -20,10 +20,13 @@ export const CellSkeleton = memo(({ width, height, className }: { width: number;
       contentVisibility: 'auto'
     }} 
     className={cn(
-      "border-r border-b border-slate-200 box-border overflow-hidden select-none relative skeleton-shine flex-shrink-0 bg-slate-50",
+      "border-r border-b border-slate-200 box-border overflow-hidden select-none relative flex-shrink-0 bg-white flex items-center justify-center p-1", // Margin/Padding from border
       className
     )}
-  />
+  >
+    {/* Blurred shining ghost element centered in the cell */}
+    <div className="w-full h-full bg-slate-200/60 rounded-sm skeleton-shine blur-[2px] opacity-80" />
+  </div>
 ));
 
 export const RowSkeleton = memo(({ 
@@ -71,26 +74,20 @@ export const TabItemSkeleton = memo(() => (
     </div>
 ));
 
-// Enhanced GroupSkeleton with Width Support for "Ghost Element" effect
+// Enhanced GroupSkeleton with Blur for Feature Tools
 export const GroupSkeleton = memo(({ width, className }: { width?: number | string; className?: string }) => (
   <div 
     className={cn("flex flex-col h-full border-r border-slate-200/50 last:border-r-0 flex-shrink-0 p-1 bg-white/5", className)}
     style={{ minWidth: width || 80, width }}
   >
-    {/* Full box ghost element with shine */}
-    <div className="flex-1 w-full p-1 flex items-center justify-center gap-2 relative overflow-hidden">
-       {/* Inner structure simulation */}
-       <div className="w-full h-full bg-slate-100/80 rounded border border-slate-200/50 skeleton-shine relative overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-30 gap-1">
-                <div className="w-1/3 h-2/3 bg-slate-300 rounded-sm" />
-                <div className="w-1/3 h-2/3 bg-slate-300 rounded-sm" />
-            </div>
-       </div>
+    {/* Full box ghost element with blurred shine */}
+    <div className="flex-1 w-full p-1.5 flex items-center justify-center relative overflow-hidden">
+       <div className="w-full h-full bg-slate-100/80 rounded border border-slate-200/50 skeleton-shine blur-[1px] relative overflow-hidden" />
     </div>
     
     {/* Label Ghost */}
     <div className="h-[14px] w-full flex items-center justify-center mt-0.5 pb-0.5">
-         <Skel className="h-2 w-16 rounded-sm opacity-40" />
+         <Skel className="h-2 w-16 rounded-sm opacity-40 blur-[0.5px]" />
     </div>
   </div>
 ));
