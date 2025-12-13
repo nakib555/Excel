@@ -1,5 +1,3 @@
-
-
 import React, { memo, Suspense, lazy } from 'react';
 import { getCellId, parseCellId, cn } from '../utils';
 
@@ -125,16 +123,13 @@ const GridRow = memo(({
     if (prev.isGhost !== next.isGhost) return false;
     if (prev.visibleCols !== next.visibleCols) return false;
     if (prev.headerColW !== next.headerColW) return false;
+    if (prev.spacerLeft !== next.spacerLeft) return false;
+    if (prev.spacerRight !== next.spacerRight) return false;
 
     // 2. Data Check (Medium)
-    // If cells reference changed, data *might* have changed. 
-    // In a pure sparse system, we could check if any ID in visibleCols changed in next.cells,
-    // but simply accepting re-render on data edit is the safest "Excel" behavior for now.
-    // Optimization: Only if activeSheetId didn't change (implied by cells ref).
     if (prev.cells !== next.cells) return false;
 
     // 3. Selection / Interaction Check (Crucial for scroll/selection perf)
-    // We only want to re-render if the selection *affects this row*.
     if (prev.activeCell !== next.activeCell || prev.selectionRange !== next.selectionRange) {
         
         // Helper to check if a row index is involved in a cell ID or range
@@ -146,39 +141,24 @@ const GridRow = memo(({
 
         const isRangeInvolved = (range: string[] | null) => {
             if (!range) return false;
-            // Optimization: check first and last of range if contiguous, but range is list of IDs here.
-            // A simple check: does any ID in the range belong to this row?
-            // If range is massive, this is slow. 
-            // However, typical selection is rectangular. 
-            // For standard Excel, we can parse just the start/end of the range logic if available, 
-            // but here we have the expanded list. 
-            // Fast Check: if range length > 0, parse first and last (if sorted) or just iterate.
             return range.some(id => parseCellId(id)?.row === prev.rowIdx);
         };
 
         const prevActiveInRow = isRowInvolved(prev.activeCell);
         const nextActiveInRow = isRowInvolved(next.activeCell);
         
-        // If active cell moved IN or OUT of this row, update.
         if (prevActiveInRow !== nextActiveInRow) return false;
-        // If active cell moved WITHIN this row, update.
         if (prevActiveInRow && nextActiveInRow && prev.activeCell !== next.activeCell) return false;
 
         const prevRangeInRow = isRangeInvolved(prev.selectionRange);
         const nextRangeInRow = isRangeInvolved(next.selectionRange);
 
-        // If range inclusion changed for this row
         if (prevRangeInRow !== nextRangeInRow) return false;
-        
-        // If range is in row, and range changed (e.g. expansion), we update.
-        // (This could be optimized to check exact cells, but row-level is good enough)
         if ((prevRangeInRow || nextRangeInRow) && prev.selectionRange !== next.selectionRange) return false;
 
-        // If neither active cell nor range touches this row, DO NOT RENDER.
         return true;
     }
 
-    // Default: props match enough
     return true; 
 });
 
