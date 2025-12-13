@@ -1,13 +1,13 @@
-
 import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense, lazy } from 'react';
 import { CellId, CellData, GridSize } from '../types';
 import { numToChar, getCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
-// Import Cell lazily for granular loading effect
-const Cell = lazy(() => import('./Cell'));
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
-// --- CONFIGURATION CONSTANTS ---
+// Lazy load GridRow to handle sheet expansion and scrolling efficiently
+const GridRow = lazy(() => import('./GridRow'));
+
+// --- EXCEL-LIKE ENGINE CONSTANTS ---
 const DEFAULT_COL_WIDTH = 100;
 const DEFAULT_ROW_HEIGHT = 28;
 const HEADER_COL_WIDTH = 46;
@@ -15,21 +15,9 @@ const HEADER_ROW_HEIGHT = 28;
 const MIN_COL_WIDTH = 30;
 const MIN_ROW_HEIGHT = 20;
 
-// Dynamic memory limit detection
-const getDeviceSafeNodeLimit = () => {
-    if (typeof navigator !== 'undefined' && 'deviceMemory' in navigator) {
-        // @ts-ignore
-        const ram = (navigator as any).deviceMemory as number;
-        // Increase limits for modern devices to prevent aggressive virtualization culling
-        return ram && ram <= 4 ? 2000 : 4000; 
-    }
-    return 3000; // Conservative default bumped up
-};
-
-const MAX_DOM_NODES = getDeviceSafeNodeLimit();
-
-// User Requirement: "cell remain loaded outisde of view left and down will be 20"
-const BUFFER_SIZE = 20;
+// Excel Buffer Strategy: "Keep exactly 20 rows/cols loaded outside"
+// This creates the "Used Cells" vs "Conceptual Cells" distinction.
+const BUFFER_SIZE = 20; 
 
 interface GridProps {
   size: GridSize;
@@ -50,109 +38,6 @@ interface GridProps {
   onTrimGrid?: () => void;
   onZoom: (delta: number) => void;
 }
-
-// --- ROW GENERATOR COMPONENT ---
-// Separated to optimize rendering cycle
-const GridRow = memo(({ 
-    rowIdx, 
-    visibleCols, 
-    height, 
-    spacerLeft, 
-    spacerRight, 
-    getColW, 
-    cells, 
-    activeCell, 
-    selectionRange, 
-    scale, 
-    onCellClick, 
-    handleMouseDown, 
-    handleMouseEnter, 
-    onCellDoubleClick, 
-    onCellChange, 
-    onNavigate, 
-    startResize,
-    headerColW,
-    isGhost,
-    bgPatternStyle
-}: any) => {
-    const isActiveRow = activeCell && parseInt(activeCell.replace(/[A-Z]+/, '')) === rowIdx + 1;
-    // Calculate dynamic font size based on zoom, capped for readability
-    const headerFontSize = Math.max(7, 12 * scale);
-    
-    return (
-        <div className="flex" style={{ width: 'max-content', height }}>
-            {/* Row Header */}
-            <div 
-                className={cn(
-                    "sticky left-0 z-10 flex items-center justify-center border-r border-b border-slate-300 bg-[#f8f9fa] font-semibold text-slate-700 select-none flex-shrink-0 hover:bg-slate-200 transition-colors overflow-hidden", 
-                    isActiveRow && "bg-emerald-100 text-emerald-800"
-                )}
-                style={{ width: headerColW, height, fontSize: `${headerFontSize}px` }}
-                onClick={() => onCellClick(getCellId(0, rowIdx), false)}
-            >
-                {rowIdx + 1}
-                <div 
-                    className="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize hover:bg-emerald-500 z-10"
-                    onMouseDown={(e) => startResize(e, 'row', rowIdx, height)} 
-                />
-            </div>
-
-            {/* Spacer Left with Pattern */}
-            <div style={{ width: spacerLeft, height: '100%', flexShrink: 0, ...bgPatternStyle }} />
-            
-            {/* Cells Loop */}
-            {visibleCols.map((col: number) => {
-                const id = getCellId(col, rowIdx);
-                const data = cells[id] || { id, raw: '', value: '', style: {} };
-                const isSelected = activeCell === id;
-                const isInRange = selectionRange ? selectionRange.includes(id) : false;
-                const width = getColW(col);
-                
-                return (
-                    <Suspense 
-                        key={id} 
-                        fallback={
-                            <div 
-                                className="relative box-border border-r border-b border-slate-200 bg-white skeleton-shine"
-                                style={{ width, height, minWidth: width, minHeight: height }}
-                            />
-                        }
-                    >
-                        <Cell 
-                            id={id} 
-                            data={data}
-                            isSelected={isSelected}
-                            isActive={isSelected} 
-                            isInRange={isInRange}
-                            width={width}
-                            height={height}
-                            scale={scale}
-                            isGhost={isGhost}
-                            onMouseDown={handleMouseDown}
-                            onMouseEnter={handleMouseEnter}
-                            onDoubleClick={onCellDoubleClick}
-                            onChange={onCellChange}
-                            onNavigate={onNavigate}
-                        />
-                    </Suspense>
-                );
-            })}
-
-            {/* Spacer Right with Pattern */}
-            <div style={{ width: spacerRight, height: '100%', flexShrink: 0, ...bgPatternStyle }} />
-        </div>
-    );
-}, (prev, next) => {
-    // Custom check if row needs re-render
-    if (prev.scale !== next.scale) return false;
-    if (prev.height !== next.height) return false;
-    if (prev.isGhost !== next.isGhost) return false;
-    if (prev.visibleCols !== next.visibleCols) return false;
-    // Deep check avoided for speed; relying on parent passing stable props or specific change signals
-    return false; 
-});
-
-GridRow.displayName = 'GridRow';
 
 const Grid: React.FC<GridProps> = ({
   size,
@@ -184,7 +69,6 @@ const Grid: React.FC<GridProps> = ({
   // Transient State
   const [isPinching, setIsPinching] = useState(false);
   const [isScrollingFast, setIsScrollingFast] = useState(false);
-  const pinchScaleRef = useRef(1); 
   const touchStartDist = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
   const scrollTimeoutRef = useRef<any>(null);
@@ -206,97 +90,63 @@ const Grid: React.FC<GridProps> = ({
   const currentScaleRef = useRef(scale);
   useEffect(() => { currentScaleRef.current = scale; }, [scale]);
 
-  // --- 1. LOAD & OFFLOAD LOGIC (Virtualization) ---
+  // --- 1. EXCEL-LIKE VIRTUALIZATION LOGIC ---
+  // Calculates the "Visible + Used" set of cells.
+  // Everything else is treated as "Empty / Conceptual" and offloaded from DOM.
   const { 
-    visibleRowStart, visibleRowEnd, 
-    visibleColStart, visibleColEnd, 
+    visibleRows, visibleCols, 
     spacerTop, spacerBottom, 
-    spacerLeft, spacerRight,
-    isOverloaded
+    spacerLeft, spacerRight 
   } = useMemo(() => {
     const { scrollTop, scrollLeft, clientHeight, clientWidth } = scrollState;
     
-    // Effective dimensions
+    // Effective dimensions with scale
+    // Note: We use O(1) average math here for speed. 
+    // Variable heights in Excel require binary search offset trees, 
+    // but for this implementation, we assume average for virtualization boundaries.
     const avgRowH = DEFAULT_ROW_HEIGHT * scale;
     const avgColW = DEFAULT_COL_WIDTH * scale;
 
-    // Viewport Calculation
-    const rowStartIndex = Math.floor(scrollTop / avgRowH);
-    const rowEndIndex = Math.min(size.rows - 1, Math.ceil((scrollTop + clientHeight) / avgRowH));
+    // 1. Calculate the exact Viewport (The Green Zone)
+    const viewportStartRow = Math.floor(scrollTop / avgRowH);
+    const viewportEndRow = Math.min(size.rows - 1, Math.ceil((scrollTop + clientHeight) / avgRowH));
     
-    const colStartIndex = Math.floor(scrollLeft / avgColW);
-    const colEndIndex = Math.min(size.cols - 1, Math.ceil((scrollLeft + clientWidth) / avgColW));
+    const viewportStartCol = Math.floor(scrollLeft / avgColW);
+    const viewportEndCol = Math.min(size.cols - 1, Math.ceil((scrollLeft + clientWidth) / avgColW));
+
+    // 2. Apply Strict Buffering (The Yellow Zone)
+    // "Keep exactly 20 rows/cols loaded outside"
+    const renderStartRow = Math.max(0, viewportStartRow - BUFFER_SIZE);
+    const renderEndRow = Math.min(size.rows - 1, viewportEndRow + BUFFER_SIZE);
     
-    const rowsVisible = rowEndIndex - rowStartIndex + 1;
-    const colsVisible = colEndIndex - colStartIndex + 1;
-    const totalVisible = rowsVisible * colsVisible;
+    const renderStartCol = Math.max(0, viewportStartCol - BUFFER_SIZE);
+    const renderEndCol = Math.min(size.cols - 1, viewportEndCol + BUFFER_SIZE);
 
-    // Buffer Strategy (Load)
-    // Requirement: "for loading => 20-30"
-    // Requirement: "cell remain loaded outisde of view left and down will be 20"
-    // We strictly use BUFFER_SIZE = 20 here.
-    let rowBuffer = BUFFER_SIZE; 
-    let colBuffer = BUFFER_SIZE;
-    
-    // Offload Strategy (Memory Overload Protection)
-    let safeRowEnd = rowEndIndex;
-    let safeColEnd = colEndIndex;
-    let isOverloaded = false;
+    // 3. Calculate Spacers (The Black Zone / Void)
+    // These represent the "conceptual" empty cells that do not exist in RAM/DOM.
+    const spacerTop = renderStartRow * avgRowH;
+    const spacerBottom = (size.rows - 1 - renderEndRow) * avgRowH;
+    const spacerLeft = renderStartCol * avgColW;
+    const spacerRight = (size.cols - 1 - renderEndCol) * avgColW;
 
-    // Adjust overload check to be less aggressive if we are just slightly above limit
-    // because user requested specific loading buffer.
-    if (totalVisible + (rowBuffer * colsVisible) + (colBuffer * rowsVisible) > MAX_DOM_NODES) {
-        // We are potentially overloaded. 
-        // Strategy: Reduce buffer to minimum, but try to keep visible area intact
-        const ratio = MAX_DOM_NODES / (totalVisible + 200); // add padding
-        if (ratio < 0.8) {
-             const safeRows = Math.floor(rowsVisible * Math.sqrt(ratio));
-             const safeCols = Math.floor(colsVisible * Math.sqrt(ratio));
-             
-             safeRowEnd = rowStartIndex + safeRows;
-             safeColEnd = colStartIndex + safeCols;
-             rowBuffer = 5; // Minimal buffer when overloaded
-             colBuffer = 5;
-             isOverloaded = true;
-        }
-    }
+    // 4. Generate Render Indices
+    const rows = [];
+    for (let i = renderStartRow; i <= renderEndRow; i++) rows.push(i);
 
-    // Trim cell beyond data side logic is handled by setting these boundaries strictly
-    const finalRowStart = Math.max(0, rowStartIndex - rowBuffer);
-    const finalRowEnd = Math.min(size.rows - 1, safeRowEnd + rowBuffer);
-    
-    const finalColStart = Math.max(0, colStartIndex - colBuffer);
-    const finalColEnd = Math.min(size.cols - 1, safeColEnd + colBuffer);
-
-    // Spacers
-    const spacerTop = finalRowStart * avgRowH;
-    const spacerBottom = (size.rows - 1 - finalRowEnd) * avgRowH;
-    const spacerLeft = finalColStart * avgColW;
-    const spacerRight = (size.cols - 1 - finalColEnd) * avgColW;
+    const cols = [];
+    for (let i = renderStartCol; i <= renderEndCol; i++) cols.push(i);
 
     return {
-        visibleRowStart: finalRowStart, visibleRowEnd: finalRowEnd,
-        visibleColStart: finalColStart, visibleColEnd: finalColEnd,
+        visibleRows: rows, 
+        visibleCols: cols,
         spacerTop, spacerBottom,
-        spacerLeft, spacerRight,
-        isOverloaded
+        spacerLeft, spacerRight
     };
-  }, [scrollState, size, scale]);
+  }, [scrollState, size, scale]); 
+  // removed rowHeights/columnWidths dependency to avoid layout thrashing during resize. 
+  // The grid will visually update via props, but the virtual window stays stable.
 
-  // Generate Indices Arrays
-  const visibleRows = useMemo(() => {
-    const rows = [];
-    for (let i = visibleRowStart; i <= visibleRowEnd; i++) rows.push(i);
-    return rows;
-  }, [visibleRowStart, visibleRowEnd]);
-
-  const visibleCols = useMemo(() => {
-    const cols = [];
-    for (let i = visibleColStart; i <= visibleColEnd; i++) cols.push(i);
-    return cols;
-  }, [visibleColStart, visibleColEnd]);
-
-  // Background Pattern for Spacers (to look like empty cells)
+  // Background Pattern for Spacers (Visual "Empty Cells" Trick)
   const bgPatternStyle = useMemo(() => ({
     backgroundImage: `linear-gradient(to right, #f1f5f9 1px, transparent 1px), linear-gradient(to bottom, #f1f5f9 1px, transparent 1px)`,
     backgroundSize: `${DEFAULT_COL_WIDTH * scale}px ${DEFAULT_ROW_HEIGHT * scale}px`,
@@ -320,7 +170,7 @@ const Grid: React.FC<GridProps> = ({
     }
   }, [scale]);
 
-  // --- 3. PINCH ZOOM LOGIC (Mobile & Trackpad) ---
+  // --- 3. PINCH ZOOM LOGIC ---
   const isPinchingRef = useRef(false);
 
   useEffect(() => {
@@ -337,16 +187,12 @@ const Grid: React.FC<GridProps> = ({
             const dy = e.touches[0].pageY - e.touches[1].pageY;
             touchStartDist.current = Math.sqrt(dx * dx + dy * dy);
             
-            // Set refined transform origin based on finger center relative to content
             if (gridLayerRef.current) {
                  const rect = el.getBoundingClientRect();
                  const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
                  const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                 
-                 // Calculate origin relative to the scrolled content
                  const originX = el.scrollLeft + (cx - rect.left);
                  const originY = el.scrollTop + (cy - rect.top);
-                 
                  gridLayerRef.current.style.transformOrigin = `${originX}px ${originY}px`;
             }
         }
@@ -361,8 +207,6 @@ const Grid: React.FC<GridProps> = ({
             
             if (touchStartDist.current > 0) {
                 const ratio = dist / touchStartDist.current;
-                
-                // Use rAF for silky smooth 60/120fps updates without React overhead
                 if (rafRef.current) cancelAnimationFrame(rafRef.current);
                 rafRef.current = requestAnimationFrame(() => {
                     if (gridLayerRef.current) {
@@ -382,8 +226,6 @@ const Grid: React.FC<GridProps> = ({
                 const currentTransform = gridLayerRef.current.style.transform;
                 const match = currentTransform.match(/scale\(([^)]+)\)/);
                 const ratio = match ? parseFloat(match[1]) : 1;
-                
-                // Commit zoom
                 gridLayerRef.current.style.transform = '';
                 const newScale = Math.max(0.25, Math.min(4, currentScaleRef.current * ratio));
                 onZoom(newScale - currentScaleRef.current);
@@ -404,11 +246,12 @@ const Grid: React.FC<GridProps> = ({
     };
   }, [onZoom]);
 
-  // --- 4. EXPANSION & SCROLL HANDLER ---
+  // --- 4. EXPANSION & TRIM LOGIC ---
   const checkExpansion = useCallback(() => {
      if (!containerRef.current || loadingRef.current) return;
      const { scrollTop, scrollLeft, clientHeight, clientWidth, scrollHeight, scrollWidth } = containerRef.current;
      
+     // Infinite Scroll Expansion
      const rowThreshold = clientHeight; 
      const colThreshold = clientWidth; 
      
@@ -416,12 +259,12 @@ const Grid: React.FC<GridProps> = ({
         loadingRef.current = true;
         setIsExpanding(true);
         onExpandGrid('row');
-        setTimeout(() => { loadingRef.current = false; setIsExpanding(false); }, 300);
+        setTimeout(() => { loadingRef.current = false; setIsExpanding(false); }, 150);
      } else if ((scrollWidth - (scrollLeft + clientWidth)) < colThreshold) {
         loadingRef.current = true;
         setIsExpanding(true);
         onExpandGrid('col');
-        setTimeout(() => { loadingRef.current = false; setIsExpanding(false); }, 300);
+        setTimeout(() => { loadingRef.current = false; setIsExpanding(false); }, 150);
      }
   }, [onExpandGrid]);
 
@@ -429,23 +272,26 @@ const Grid: React.FC<GridProps> = ({
     if (!containerRef.current) return;
     const element = containerRef.current;
     
-    // Ghost Mode: Detect fast scrolling
+    // 1. Detect fast scrolling to enable Ghost Mode
     setIsScrollingFast(true);
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    
     scrollTimeoutRef.current = setTimeout(() => {
         setIsScrollingFast(false);
-        // Requirement: "for left trim cell beyond data side for down trim cell beyond data side"
-        // We trigger trim when user stops scrolling to cleanup excessive empty space
+        
+        // 2. Trigger Trim Logic (Garbage Collection of Empty Space)
+        // This offloads "Conceptual Cells" that are far outside the viewport
         if (onTrimGrid) {
             if (trimTimeoutRef.current) clearTimeout(trimTimeoutRef.current);
             trimTimeoutRef.current = setTimeout(() => {
                 onTrimGrid();
-            }, 200);
+            }, 500); // Wait a bit after scroll stops
         }
     }, 150);
 
     checkExpansion();
 
+    // Use rAF for high-performance scroll sync
     requestAnimationFrame(() => {
         setScrollState({ 
             scrollTop: element.scrollTop, 
@@ -456,7 +302,7 @@ const Grid: React.FC<GridProps> = ({
     });
   }, [checkExpansion, onTrimGrid]);
 
-  // Helpers
+  // --- 5. EVENT HANDLERS ---
   const handleMouseDown = useCallback((id: string, isShift: boolean) => {
       isDraggingRef.current = true;
       if (!isShift) selectionStartRef.current = id;
@@ -527,7 +373,6 @@ const Grid: React.FC<GridProps> = ({
         ref={gridLayerRef}
         className={cn(
             "inline-block bg-white min-w-full relative origin-top-left",
-            // Remove transition completely during pinch for instant 1:1 tracking
             !isPinching && "transition-transform duration-100 ease-out", 
             isPinching && "will-change-transform"
         )}
@@ -578,53 +423,55 @@ const Grid: React.FC<GridProps> = ({
 
         {/* Grid Body */}
         <div>
-            {/* Top Spacer with Grid Pattern */}
+            {/* Top Spacer (Offloaded rows) */}
             <div style={{ height: spacerTop, width: '100%', ...bgPatternStyle }} />
             
             {visibleRows.map(row => (
-                <GridRow 
-                    key={row}
-                    rowIdx={row}
-                    visibleCols={visibleCols}
-                    height={getRowH(row)}
-                    spacerLeft={spacerLeft}
-                    spacerRight={spacerRight}
-                    getColW={getColW}
-                    cells={cells}
-                    activeCell={activeCell}
-                    selectionRange={selectionRange}
-                    scale={scale}
-                    headerColW={headerColW}
-                    // Pass handlers
-                    onCellClick={onCellClick}
-                    handleMouseDown={handleMouseDown}
-                    handleMouseEnter={handleMouseEnter}
-                    onCellDoubleClick={onCellDoubleClick}
-                    onCellChange={onCellChange}
-                    onNavigate={onNavigate}
-                    startResize={startResize}
-                    // Code Logic: Use Ghost element when scrolling fast for performance or overloaded
-                    isGhost={isScrollingFast || isOverloaded}
-                    bgPatternStyle={bgPatternStyle}
-                />
+                <Suspense 
+                    key={row} 
+                    fallback={
+                        <div className="flex" style={{ height: getRowH(row), width: 'max-content' }}>
+                            <div className="sticky left-0 z-10 border-r border-b border-slate-300 bg-[#f8f9fa]" style={{ width: headerColW, height: getRowH(row) }} />
+                            <div style={{ width: spacerLeft, height: '100%' }} />
+                            <div className="flex-1 border-b border-slate-100 bg-white skeleton-shine" style={{ minWidth: '800px' }} />
+                        </div>
+                    }
+                >
+                    <GridRow 
+                        rowIdx={row}
+                        visibleCols={visibleCols}
+                        height={getRowH(row)}
+                        spacerLeft={spacerLeft}
+                        spacerRight={spacerRight}
+                        getColW={getColW}
+                        cells={cells}
+                        activeCell={activeCell}
+                        selectionRange={selectionRange}
+                        scale={scale}
+                        headerColW={headerColW}
+                        onCellClick={onCellClick}
+                        handleMouseDown={handleMouseDown}
+                        handleMouseEnter={handleMouseEnter}
+                        onCellDoubleClick={onCellDoubleClick}
+                        onCellChange={onCellChange}
+                        onNavigate={onNavigate}
+                        startResize={startResize}
+                        isGhost={isScrollingFast}
+                        bgPatternStyle={bgPatternStyle}
+                    />
+                </Suspense>
             ))}
             
-            {/* Bottom Spacer with Grid Pattern */}
+            {/* Bottom Spacer (Offloaded rows) */}
             <div style={{ height: spacerBottom, width: '100%', ...bgPatternStyle }} />
         </div>
 
-        {/* --- 5. GHOST OVERLAY / FEEDBACK --- */}
-        {/* Displayed when memory protection kicks in or loading */}
-        {(isExpanding || isOverloaded) && (
+        {/* Feedback Overlay */}
+        {(isExpanding) && (
            <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-               <div className={cn(
-                   "backdrop-blur text-white px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 border border-white/10",
-                   isOverloaded ? "bg-amber-600/90" : "bg-slate-800/90"
-               )}>
-                   {isExpanding ? <Loader2 className="animate-spin text-emerald-400" size={16} /> : <AlertTriangle className="text-white" size={16} />}
-                   <span className="text-xs font-medium">
-                       {isExpanding ? "Expanding Sheet..." : "View Optimized (Reduced Detail)"}
-                   </span>
+               <div className="backdrop-blur text-white px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 border border-white/10 bg-slate-800/90">
+                   <Loader2 className="animate-spin text-emerald-400" size={16} />
+                   <span className="text-xs font-medium">Expanding Sheet...</span>
                </div>
            </div>
         )}

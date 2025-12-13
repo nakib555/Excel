@@ -1,8 +1,6 @@
-
-
 import React, { useState, useCallback, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
 import { CellId, CellData, CellStyle, GridSize, Sheet } from './types';
-import { evaluateFormula, getRange, getNextCellId, parseCellId, getCellId } from './utils';
+import { evaluateFormula, getRange, getNextCellId, parseCellId, getCellId, extractDependencies } from './utils';
 import { NavigationDirection } from './components';
 
 // Import Skeletons
@@ -22,17 +20,22 @@ const SheetTabs = lazy(() => import('./components/SheetTabs'));
 const StatusBar = lazy(() => import('./components/StatusBar'));
 
 // Configuration
-// User Requirement: "for cell genaration =>50 or 30"
+// "Use a buffer strategy: ~50 rows, 30 cols visible"
 const INITIAL_ROWS = 50; 
 const INITIAL_COLS = 30; 
 const MAX_ROWS = 1048576; 
 const MAX_COLS = 16384;   
-const EXPANSION_BATCH_ROWS = 30; // Smaller batches for smoother updates
-const EXPANSION_BATCH_COLS = 20;
+const EXPANSION_BATCH_ROWS = 50; 
+const EXPANSION_BATCH_COLS = 30;
 
-// Initial sample data generation helper
-const generateInitialData = (): Record<CellId, CellData> => {
+// Cell Generation: "Sparse Data" Strategy
+// We do NOT generate objects for empty cells. 
+// "Empty cells are conceptual, not real."
+const generateInitialData = (): { cells: Record<CellId, CellData>, dependentsMap: Record<CellId, CellId[]> } => {
     const initData: Record<CellId, CellData> = {};
+    const dependentsMap: Record<CellId, CellId[]> = {};
+    
+    // Only defining the used range. Everything else is implicit.
     const sample = [
       { id: "A1", val: "Item", style: { bold: true, bg: '#f1f5f9', color: '#475569' } },
       { id: "B1", val: "Cost", style: { bold: true, bg: '#f1f5f9', color: '#475569', format: 'currency' as const } },
@@ -54,28 +57,39 @@ const generateInitialData = (): Record<CellId, CellData> => {
       };
     });
     
-    // Initial evaluation
+    // Initial evaluation & Dependency Building
     const evaluated = { ...initData };
+    
     Object.keys(evaluated).forEach(key => {
-        evaluated[key].value = evaluateFormula(evaluated[key].raw, evaluated);
+        const cell = evaluated[key];
+        if (cell.raw.startsWith('=')) {
+            cell.value = evaluateFormula(cell.raw, evaluated);
+            const deps = extractDependencies(cell.raw);
+            deps.forEach(dep => {
+                if (!dependentsMap[dep]) dependentsMap[dep] = [];
+                if (!dependentsMap[dep].includes(key)) dependentsMap[dep].push(key);
+            });
+        }
     });
     
-    return evaluated;
+    return { cells: evaluated, dependentsMap };
 };
 
 const App: React.FC = () => {
-  // Use lazy initialization for sheets to avoid re-generating data on every render
-  const [sheets, setSheets] = useState<Sheet[]>(() => [
-    {
+  const [sheets, setSheets] = useState<Sheet[]>(() => {
+    const { cells, dependentsMap } = generateInitialData();
+    return [{
       id: 'sheet1',
       name: 'Budget 2024',
-      cells: generateInitialData(),
+      cells,
+      dependentsMap,
       activeCell: "A1",
       selectionRange: ["A1"],
       columnWidths: {},
       rowHeights: {}
-    }
-  ]);
+    }];
+  });
+  
   const [activeSheetId, setActiveSheetId] = useState<string>('sheet1');
   const [gridSize, setGridSize] = useState<GridSize>({ rows: INITIAL_ROWS, cols: INITIAL_COLS });
   const [zoom, setZoom] = useState<number>(1);
@@ -124,37 +138,75 @@ const App: React.FC = () => {
     };
   }, [selectionRange, cells]);
 
+  // Lazy / Sparse Cell Update Logic
   const handleCellChange = useCallback((id: CellId, rawValue: string) => {
     setSheets(prevSheets => prevSheets.map(sheet => {
       if (sheet.id !== activeSheetId) return sheet;
 
       const nextCells = { ...sheet.cells };
+      const nextDependents = { ...sheet.dependentsMap };
+
+      // 1. Get old cell data to clean up old dependencies
+      const oldCell = nextCells[id];
+      const oldRaw = oldCell?.raw || '';
       
-      // Optimization: If value is empty and no style, remove the key (sparse population)
+      if (oldRaw.startsWith('=')) {
+          const oldDeps = extractDependencies(oldRaw);
+          oldDeps.forEach(depId => {
+              if (nextDependents[depId]) {
+                  nextDependents[depId] = nextDependents[depId].filter(d => d !== id);
+                  if (nextDependents[depId].length === 0) delete nextDependents[depId];
+              }
+          });
+      }
+
+      // 2. Sparse Update: Remove if empty, Add if data
       if (!rawValue && (!nextCells[id]?.style || Object.keys(nextCells[id].style).length === 0)) {
          delete nextCells[id];
       } else {
          nextCells[id] = {
            ...nextCells[id] || { id, style: {} },
            raw: rawValue,
-           value: rawValue
+           value: rawValue 
          };
       }
 
-      const keys = Object.keys(nextCells);
-      keys.forEach(key => {
-         if (nextCells[key].raw.startsWith('=') || key === id) {
-            nextCells[key].value = evaluateFormula(nextCells[key].raw, nextCells);
-         }
-      });
-      // Second pass
-      keys.forEach(key => {
-         if (nextCells[key].raw.startsWith('=')) {
-            nextCells[key].value = evaluateFormula(nextCells[key].raw, nextCells);
-         }
-      });
+      // 3. Register new dependencies
+      if (rawValue.startsWith('=')) {
+          const newDeps = extractDependencies(rawValue);
+          newDeps.forEach(depId => {
+              if (!nextDependents[depId]) nextDependents[depId] = [];
+              if (!nextDependents[depId].includes(id)) nextDependents[depId].push(id);
+          });
+      }
 
-      return { ...sheet, cells: nextCells };
+      // 4. Lazy Recalculation (Dependency Graph traversal)
+      const updateQueue = [id];
+      const visited = new Set<string>(); 
+
+      let head = 0;
+      while (head < updateQueue.length) {
+          const currentId = updateQueue[head++];
+          
+          if (visited.has(currentId) && currentId !== id) continue; 
+          visited.add(currentId);
+          
+          const cell = nextCells[currentId];
+          if (!cell) continue;
+
+          if (cell.raw.startsWith('=')) {
+              cell.value = evaluateFormula(cell.raw, nextCells);
+          } 
+
+          const dependents = nextDependents[currentId];
+          if (dependents) {
+              dependents.forEach(dep => {
+                 updateQueue.push(dep);
+              });
+          }
+      }
+
+      return { ...sheet, cells: nextCells, dependentsMap: nextDependents };
     }));
   }, [activeSheetId]);
 
@@ -240,6 +292,8 @@ const App: React.FC = () => {
     }));
   }, [activeSheetId]);
 
+  // "Load Logic": Infinite Expansion
+  // We only expand the grid structure when requested (scrolling near edge)
   const handleExpandGrid = useCallback((direction: 'row' | 'col') => {
     setGridSize(prev => {
         if (direction === 'row') {
@@ -252,21 +306,21 @@ const App: React.FC = () => {
     });
   }, []);
 
-  // User Requirement: "trim cell beyond data side"
+  // "Trim Logic": Garbage Collect Empty Space
+  // Detects the "UsedRange" and shrinks the scrollable area to fit data + buffer
+  // This mimics Excel actively releasing off-screen/unused objects.
   const handleTrimGrid = useCallback(() => {
     let maxRow = 0;
     let maxCol = 0;
     
+    // Find UsedRange (O(N) on sparse cells)
     const ids = Object.keys(cells);
-    if (ids.length === 0) {
-         setGridSize({ rows: INITIAL_ROWS, cols: INITIAL_COLS });
-         return;
-    }
-
-    for (const id of ids) {
-         const { row, col } = parseCellId(id) || { row: 0, col: 0 };
-         if (row > maxRow) maxRow = row;
-         if (col > maxCol) maxCol = col;
+    if (ids.length > 0) {
+        for (const id of ids) {
+             const { row, col } = parseCellId(id) || { row: 0, col: 0 };
+             if (row > maxRow) maxRow = row;
+             if (col > maxCol) maxCol = col;
+        }
     }
     
     if (activeCell) {
@@ -275,12 +329,13 @@ const App: React.FC = () => {
          if (col > maxCol) maxCol = col;
     }
 
+    // "Empty cells do not exist". We only keep a small buffer active.
     const BUFFER = 20; 
     const newRows = Math.max(INITIAL_ROWS, maxRow + 1 + BUFFER);
     const newCols = Math.max(INITIAL_COLS, maxCol + 1 + BUFFER);
 
     setGridSize(prev => {
-        if (prev.rows > newRows + 10 || prev.cols > newCols + 10) {
+        if (Math.abs(prev.rows - newRows) > 5 || Math.abs(prev.cols - newCols) > 5) {
              return { rows: newRows, cols: newCols };
         }
         return prev;
@@ -316,7 +371,7 @@ const App: React.FC = () => {
     if (confirm(`Are you sure you want to clear the entire "${activeSheet.name}"?`)) {
         setSheets(prev => prev.map(s => {
           if (s.id !== activeSheetId) return s;
-          return { ...s, cells: {}, activeCell: 'A1', selectionRange: ['A1'], columnWidths: {}, rowHeights: {} };
+          return { ...s, cells: {}, dependentsMap: {}, activeCell: 'A1', selectionRange: ['A1'], columnWidths: {}, rowHeights: {} };
         }));
     }
   }, [activeSheet.name, activeSheetId]);
@@ -328,6 +383,7 @@ const App: React.FC = () => {
       id: newId,
       name: `Sheet ${num}`,
       cells: {},
+      dependentsMap: {},
       activeCell: 'A1',
       selectionRange: ['A1'],
       columnWidths: {},
@@ -400,9 +456,11 @@ const App: React.FC = () => {
     
     setSheets(prev => prev.map(s => {
         if (s.id !== activeSheetId) return s;
-        const newCells = { ...s.cells };
         
-        Object.values(copiedCells).forEach(cell => {
+        const nextCells = { ...s.cells };
+        const nextDependents = { ...s.dependentsMap };
+        
+        Object.values(copiedCells).forEach((cell: CellData) => {
              const orig = parseCellId(cell.id)!;
              const rOffset = orig.row - baseRow;
              const cOffset = orig.col - baseCol;
@@ -411,12 +469,28 @@ const App: React.FC = () => {
              const targetCol = targetStart.col + cOffset;
              const targetId = getCellId(targetCol, targetRow);
              
-             newCells[targetId] = {
-                 ...cell,
-                 id: targetId,
-             };
+             const rawValue = cell.raw;
+             
+             const oldCell = nextCells[targetId];
+             if (oldCell?.raw.startsWith('=')) {
+                const oldDeps = extractDependencies(oldCell.raw);
+                oldDeps.forEach(dep => {
+                   if(nextDependents[dep]) nextDependents[dep] = nextDependents[dep].filter(d => d !== targetId);
+                });
+             }
+             
+             nextCells[targetId] = { ...cell, id: targetId };
+             
+             if (rawValue.startsWith('=')) {
+                 const newDeps = extractDependencies(rawValue);
+                 newDeps.forEach(depId => {
+                     if(!nextDependents[depId]) nextDependents[depId] = [];
+                     if(!nextDependents[depId].includes(targetId)) nextDependents[depId].push(targetId);
+                 });
+             }
         });
-        return { ...s, cells: newCells };
+        
+        return { ...s, cells: nextCells, dependentsMap: nextDependents };
     }));
   }, [activeCell, activeSheetId]);
 
@@ -426,7 +500,7 @@ const App: React.FC = () => {
       setSheets(prev => prev.map(sheet => {
           if (sheet.id !== activeSheetId) return sheet;
           const newCells: Record<string, CellData> = {};
-          Object.values(sheet.cells).forEach(cell => {
+          Object.values(sheet.cells).forEach((cell: CellData) => {
               const { col, row } = parseCellId(cell.id)!;
               if (row >= startRow) {
                   const newId = getCellId(col, row + 1);
@@ -445,9 +519,9 @@ const App: React.FC = () => {
       setSheets(prev => prev.map(sheet => {
           if (sheet.id !== activeSheetId) return sheet;
           const newCells: Record<string, CellData> = {};
-          Object.values(sheet.cells).forEach(cell => {
+          Object.values(sheet.cells).forEach((cell: CellData) => {
               const { col, row } = parseCellId(cell.id)!;
-              if (row === startRow) return; // Drop
+              if (row === startRow) return;
               if (row > startRow) {
                   const newId = getCellId(col, row - 1);
                   newCells[newId] = { ...cell, id: newId };
@@ -466,7 +540,7 @@ const App: React.FC = () => {
     setSheets(prev => prev.map(sheet => {
         if (sheet.id !== activeSheetId) return sheet;
 
-        let startRow = 1; // Default skip header
+        let startRow = 1; 
         let endRow = gridSize.rows - 1;
 
         if (sheet.selectionRange && sheet.selectionRange.length > 1) {
@@ -488,7 +562,7 @@ const App: React.FC = () => {
             rowsData.push({ rowIdx: r, cells: {} });
         }
         
-        Object.values(sheet.cells).forEach(cell => {
+        Object.values(sheet.cells).forEach((cell: CellData) => {
              const { col, row } = parseCellId(cell.id)!;
              if (row >= startRow && row <= endRow) {
                  const rowIndexInArray = row - startRow;
@@ -524,7 +598,7 @@ const App: React.FC = () => {
 
         rowsData.forEach((rowData, i) => {
             const targetRow = startRow + i;
-            Object.values(rowData.cells).forEach(cell => {
+            Object.values(rowData.cells).forEach((cell: CellData) => {
                  const { col } = parseCellId(cell.id)!;
                  const newId = getCellId(col, targetRow);
                  newCells[newId] = { ...cell, id: newId };

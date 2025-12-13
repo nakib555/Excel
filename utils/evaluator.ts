@@ -78,3 +78,32 @@ export const evaluateFormula = (
   // 3. Evaluate the final math expression
   return evaluateExpression(processed);
 };
+
+// New function to extract dependencies from a formula string
+export const extractDependencies = (formula: string): string[] => {
+  if (!formula.startsWith('=')) return [];
+  const upper = formula.substring(1).toUpperCase();
+  const deps = new Set<string>();
+  
+  // 1. Extract Ranges first
+  const rangeRegex = /([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g;
+  let match;
+  let cleanedFormula = upper; // We'll remove ranges to avoid double-matching cells inside them if needed, 
+                              // but Set handles deduplication, so simpler is often better.
+  
+  while ((match = rangeRegex.exec(upper)) !== null) {
+      const range = getRange(match[1], match[2]);
+      range.forEach(id => deps.add(id));
+  }
+  
+  // 2. Extract Individual Cells
+  // We match things that look like cells. parseCellId verifies they are valid coords.
+  const cellRegex = /[A-Z]+[0-9]+/g;
+  while ((match = cellRegex.exec(upper)) !== null) {
+      if (parseCellId(match[0])) {
+          deps.add(match[0]);
+      }
+  }
+  
+  return Array.from(deps);
+};

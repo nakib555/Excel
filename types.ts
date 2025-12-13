@@ -35,6 +35,7 @@ export interface Sheet {
   id: string;
   name: string;
   cells: Record<CellId, CellData>;
+  dependentsMap: Record<CellId, CellId[]>; // Dependency Graph: Cell -> [Dependents]
   activeCell: CellId | null;
   selectionRange: CellId[] | null;
   columnWidths: Record<string, number>;
