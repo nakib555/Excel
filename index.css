@@ -148,7 +148,7 @@ html, body, #root {
     background-image: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.6) 50%,
+      rgba(226, 232, 240, 0.5) 50%, /* slate-200 for subtle shine on white */
       transparent 100%
     );
     animation: shimmer 1.5s infinite cubic-bezier(0.4, 0.0, 0.2, 1);

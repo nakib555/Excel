@@ -5,6 +5,7 @@ import { NavigationDirection } from './Cell';
 import { CellStyle } from '../types';
 import { CellSkeleton } from './Skeletons';
 
+// Lazy load Cell to enable granular code splitting and loading states
 const Cell = lazy(() => import('./Cell'));
 
 interface GridRowProps {
@@ -15,7 +16,7 @@ interface GridRowProps {
   spacerRight: number;
   getColW: (i: number) => number;
   cells: any;
-  styles: Record<string, CellStyle>; // Style Registry
+  styles: Record<string, CellStyle>;
   activeCell: string | null;
   selectionBounds: { minRow: number, maxRow: number, minCol: number, maxCol: number } | null;
   scale: number;
@@ -28,7 +29,7 @@ interface GridRowProps {
   startResize: (e: React.MouseEvent, type: 'col' | 'row', index: number, size: number) => void;
   headerColW: number;
   isGhost: boolean;
-  bgPatternStyle: any;
+  bgPatternStyle: React.CSSProperties;
 }
 
 const GridRow = memo(({ 
@@ -93,13 +94,10 @@ const GridRow = memo(({
             {/* Cells Loop */}
             {visibleCols.map((col: number) => {
                 const id = getCellId(col, rowIdx);
-                // Default structure if missing
                 const data = cells[id] || { id, raw: '', value: '' };
-                // Resolve Style from Flyweight Registry
                 const cellStyle = (data.styleId && styles[data.styleId]) ? styles[data.styleId] : {};
 
                 const isSelected = activeCell === id;
-                // O(1) Check using bounds
                 const isInRange = isRowSelected && selectionBounds 
                     ? (col >= selectionBounds.minCol && col <= selectionBounds.maxCol)
                     : false;
@@ -146,7 +144,7 @@ const GridRow = memo(({
     if (prev.spacerLeft !== next.spacerLeft) return false;
     if (prev.spacerRight !== next.spacerRight) return false;
     if (prev.cells !== next.cells) return false;
-    if (prev.styles !== next.styles) return false; // Registry Check
+    if (prev.styles !== next.styles) return false;
 
     // 2. Active Cell Check
     const isRowInvolvedActive = (id: string | null, rowIdx: number) => {
@@ -161,7 +159,7 @@ const GridRow = memo(({
     if (prevActive !== nextActive) return false;
     if (prevActive && nextActive && prev.activeCell !== next.activeCell) return false;
 
-    // 3. Selection Check (Optimized using Bounds equality)
+    // 3. Selection Check
     const b1 = prev.selectionBounds;
     const b2 = next.selectionBounds;
     
