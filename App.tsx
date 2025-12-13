@@ -323,6 +323,24 @@ const App: React.FC = () => {
      handleColumnResize(colChar, Math.max(30, currentW + delta));
   }, [activeCell, columnWidths, handleColumnResize]);
 
+  const handleResetActiveResize = useCallback(() => {
+     if (!activeCell) return;
+     const { col, row } = parseCellId(activeCell)!;
+     const colChar = numToChar(col);
+     
+     setSheets(prev => prev.map(s => {
+         if (s.id !== activeSheetId) return s;
+         const newColWidths = { ...s.columnWidths };
+         const newRowHeights = { ...s.rowHeights };
+         
+         // Remove overrides to reset to defaults
+         delete newColWidths[colChar];
+         delete newRowHeights[row];
+         
+         return { ...s, columnWidths: newColWidths, rowHeights: newRowHeights };
+     }));
+  }, [activeCell, activeSheetId]);
+
   // Keyboard Shortcuts for Desktop Resizing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -571,6 +589,7 @@ const App: React.FC = () => {
                    activeCell={activeCell}
                    onResizeRow={resizeActiveRow}
                    onResizeCol={resizeActiveCol}
+                   onReset={handleResetActiveResize}
                />
           </Suspense>
         </div>
