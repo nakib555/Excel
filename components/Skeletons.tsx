@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../utils';
@@ -111,24 +110,6 @@ export const RibbonSkeleton = memo(() => {
 
 export const ToolbarSkeleton = memo(() => (
   <div className="flex flex-col w-full bg-[#f8fafc] border-b border-slate-200 shadow-sm z-40 select-none">
-    {/* Title Bar */}
-    <div className="h-11 bg-[#0f172a] flex items-center justify-between px-4 w-full border-b border-slate-700/50">
-       <div className="flex items-center gap-4">
-          <Skel className="w-9 h-9 rounded bg-white/10" />
-          <Skel className="w-24 h-4 bg-white/10" />
-          <div className="flex gap-2 ml-4">
-              <Skel className="w-6 h-6 rounded-full bg-white/10" />
-              <Skel className="w-6 h-6 rounded-full bg-white/10" />
-              <div className="w-[1px] h-4 bg-slate-700 mx-1"></div>
-              <Skel className="w-16 h-6 rounded-full bg-white/10" />
-          </div>
-       </div>
-       <div className="flex items-center gap-3">
-           <Skel className="w-48 h-8 rounded bg-slate-800 hidden md:block" />
-           <Skel className="w-8 h-8 rounded-full bg-indigo-600/50" />
-       </div>
-    </div>
-    
     {/* Tabs Bar */}
     <div className="h-[37px] bg-[#0f172a] px-4 flex items-end gap-1 pt-1 overflow-hidden">
         {['Home', 'Insert', 'Draw', 'Page Layout', 'Formulas', 'Data'].map((tab, i) => (

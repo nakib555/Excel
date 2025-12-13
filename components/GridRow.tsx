@@ -142,6 +142,7 @@ const GridRow = memo(({
     if (prev.spacerRight !== next.spacerRight) return false;
     if (prev.cells !== next.cells) return false;
     if (prev.styles !== next.styles) return false;
+    if (prev.getColW !== next.getColW) return false; // Added check for column width function
 
     // 2. Active Cell Check
     const isRowInvolvedActive = (id: string | null, rowIdx: number) => {

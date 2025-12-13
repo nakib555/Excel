@@ -1,6 +1,6 @@
 import React, { useState, memo, lazy, Suspense } from 'react';
 import { 
-  Undo, Redo, Download, Search, Sparkles, Grid3X3 
+  Sparkles 
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { DraggableScrollContainer } from './tabs/shared';
@@ -27,50 +27,8 @@ const Toolbar: React.FC<any> = (props) => {
   return (
     <div className="flex flex-col bg-[#0f172a] z-40 select-none shadow-soft transition-all">
       
-      {/* 1. Window / Quick Access Bar */}
-      <div className="flex items-center justify-between px-4 h-11 bg-[#0f172a] text-white z-10">
-         <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-               <div className="grid place-items-center w-9 h-9 rounded hover:bg-white/10 transition-colors cursor-pointer">
-                 <Grid3X3 size={20} className="text-emerald-400" />
-               </div>
-               <span className="text-sm font-semibold tracking-wide text-white">Excel</span>
-            </div>
-            
-             <div className="flex items-center gap-2 ml-4">
-                <button title="Undo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Undo size={16} className="text-blue-300" /></button>
-                <button title="Redo" className="p-1.5 hover:bg-white/10 rounded-full text-slate-300 hover:text-white transition-colors"><Redo size={16} className="text-blue-300" /></button>
-                <div className="w-[1px] h-4 bg-slate-700 mx-1"></div>
-                <button onClick={props.onExport} title="Save/Export" className="p-1.5 px-3 hover:bg-white/10 rounded-full text-slate-300 hover:text-white flex items-center gap-2 transition-colors">
-                     <Download size={16} className="text-green-400" />
-                     <span className="text-xs font-medium hidden md:block">Save</span>
-                </button>
-                
-                <div className="hidden md:flex items-center bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors cursor-pointer border border-white/5 ml-2">
-                    <span className="text-xs font-medium text-slate-200">Book1</span>
-                    <span className="mx-2 text-slate-500 text-[10px]">•</span>
-                    <span className="text-[10px] text-slate-400">Saved</span>
-                </div>
-            </div>
-         </div>
-         
-         <div className="flex items-center gap-3">
-            <div className="relative group hidden lg:block">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
-                <input 
-                    type="text" 
-                    placeholder="Search" 
-                    className="h-8 w-64 bg-slate-800/50 border border-slate-700/50 rounded-md text-xs text-white placeholder-slate-400 pl-9 pr-4 focus:outline-none focus:bg-slate-800 focus:border-blue-500/50 transition-all"
-                />
-            </div>
-             <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md ring-2 ring-[#0f172a] ml-2 cursor-pointer hover:bg-indigo-500 transition-colors">
-                JD
-             </div>
-         </div>
-      </div>
-
       {/* 2. Tab Navigation */}
-      <div className="bg-[#0f172a] px-2 md:px-4 flex items-end justify-between pt-1">
+      <div className="bg-[#0f172a] px-2 md:px-4 flex items-end justify-between pt-2">
         <DraggableScrollContainer className="flex items-end gap-1">
             {TABS.map(tab => {
                 const isActive = activeTab === tab;
