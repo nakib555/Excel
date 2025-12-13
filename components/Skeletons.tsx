@@ -1,14 +1,14 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../utils';
 
 // Reusable shiny skeleton component
-const Skel = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+const Skel = memo(({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <div className={cn("skeleton-shine rounded-sm", className)} style={style} />
-);
+));
 
-export const CellSkeleton = ({ width, height }: { width: number; height: number }) => (
+export const CellSkeleton = memo(({ width, height }: { width: number; height: number }) => (
   <div 
     style={{ 
       width, 
@@ -20,16 +20,16 @@ export const CellSkeleton = ({ width, height }: { width: number; height: number 
   >
     <Skel className="w-full h-full rounded-sm opacity-50" />
   </div>
-);
+));
 
-export const TabItemSkeleton = () => (
+export const TabItemSkeleton = memo(() => (
     <div className="flex items-center px-4 py-1.5 min-w-[100px] h-full justify-center bg-transparent border-t-2 border-transparent">
         <Skel className="w-16 h-4" />
     </div>
-);
+));
 
 // Enhanced GroupSkeleton with Width Support for "Ghost Element" effect
-export const GroupSkeleton = ({ width, className }: { width?: number | string; className?: string }) => (
+export const GroupSkeleton = memo(({ width, className }: { width?: number | string; className?: string }) => (
   <div 
     className={cn("flex flex-col h-full border-r border-slate-200/50 last:border-r-0 flex-shrink-0 p-1 bg-white/5", className)}
     style={{ minWidth: width || 80, width }}
@@ -50,9 +50,9 @@ export const GroupSkeleton = ({ width, className }: { width?: number | string; c
          <Skel className="h-2 w-16 rounded-sm opacity-40" />
     </div>
   </div>
-);
+));
 
-export const RibbonSkeleton = () => {
+export const RibbonSkeleton = memo(() => {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -67,9 +67,9 @@ export const RibbonSkeleton = () => {
       <GroupSkeleton width={100} />
     </motion.div>
   );
-};
+});
 
-export const ToolbarSkeleton = () => (
+export const ToolbarSkeleton = memo(() => (
   <div className="flex flex-col w-full bg-[#f8fafc] border-b border-slate-200 shadow-sm z-40 select-none">
     {/* Title Bar */}
     <div className="h-11 bg-[#0f172a] flex items-center justify-between px-4 w-full border-b border-slate-700/50">
@@ -101,9 +101,9 @@ export const ToolbarSkeleton = () => (
          <RibbonSkeleton />
     </div>
   </div>
-);
+));
 
-export const FormulaBarSkeleton = () => (
+export const FormulaBarSkeleton = memo(() => (
   <div className="flex items-center h-12 px-4 border-b border-slate-200 bg-white gap-3 shadow-sm z-30 select-none">
     <Skel className="w-14 h-8 bg-slate-100 border border-slate-200" />
     <div className="w-[1px] h-5 bg-slate-300 hidden md:block" />
@@ -114,9 +114,9 @@ export const FormulaBarSkeleton = () => (
     </div>
     <Skel className="flex-1 h-8 bg-slate-50 border border-transparent" />
   </div>
-);
+));
 
-export const SheetTabsSkeleton = () => (
+export const SheetTabsSkeleton = memo(() => (
     <div className="flex items-center h-10 bg-slate-100 border-t border-slate-300 px-2 gap-1 select-none z-40">
         <div className="flex gap-1 mr-2">
              <Skel className="w-5 h-5 rounded-sm" />
@@ -135,9 +135,9 @@ export const SheetTabsSkeleton = () => (
         </div>
         <Skel className="ml-2 w-6 h-6 rounded-full" />
     </div>
-);
+));
 
-export const StatusBarSkeleton = () => (
+export const StatusBarSkeleton = memo(() => (
     <div className="h-9 bg-[#0f172a] border-t border-slate-700 flex items-center justify-between px-4 select-none z-50">
         <div className="flex items-center gap-3">
              <Skel className="w-16 h-3 bg-white/10" />
@@ -147,9 +147,9 @@ export const StatusBarSkeleton = () => (
              <Skel className="w-24 h-3 bg-white/10" />
         </div>
     </div>
-);
+));
 
-export const GridSkeleton = () => (
+export const GridSkeleton = memo(() => (
   <div className="flex-1 overflow-hidden relative w-full h-full bg-white flex flex-col select-none">
       {/* Header Row */}
       <div className="flex h-[28px] border-b border-slate-300 bg-slate-50">
@@ -191,9 +191,9 @@ export const GridSkeleton = () => (
           </div>
       </div>
   </div>
-);
+));
 
-export const AppSkeleton = () => (
+export const AppSkeleton = memo(() => (
   <div className="flex flex-col h-[100dvh] bg-slate-50 font-sans text-slate-900 overflow-hidden">
     <ToolbarSkeleton />
     <FormulaBarSkeleton />
@@ -203,4 +203,4 @@ export const AppSkeleton = () => (
     <SheetTabsSkeleton />
     <StatusBarSkeleton />
   </div>
-);
+));

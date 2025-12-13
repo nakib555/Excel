@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, memo, useCallback, useState, useMemo, useLayoutEffect, Suspense, lazy } from 'react';
 import { CellId, CellData, GridSize } from '../types';
 import { numToChar, getCellId, cn } from '../utils';
@@ -6,6 +7,8 @@ import { Loader2 } from 'lucide-react';
 
 // Lazy load GridRow to handle sheet expansion and scrolling efficiently
 const GridRow = lazy(() => import('./GridRow'));
+// Lazy load ColumnHeader for granular column loading
+const ColumnHeader = lazy(() => import('./ColumnHeader'));
 
 // --- EXCEL-LIKE ENGINE CONSTANTS ---
 const DEFAULT_COL_WIDTH = 100;
@@ -403,7 +406,7 @@ const Grid: React.FC<GridProps> = ({
                  />
             </div>
 
-            {/* Column Headers */}
+            {/* Column Headers - Now Lazy Loaded */}
             <div className="flex border-b border-slate-300">
                 <div style={{ width: spacerLeft, height: 1, flexShrink: 0 }} />
                 {visibleCols.map(col => {
@@ -411,13 +414,26 @@ const Grid: React.FC<GridProps> = ({
                     const colChar = numToChar(col);
                     const isActive = activeCell?.startsWith(colChar);
                     return (
-                        <div key={col} className={cn("relative flex items-center justify-center border-r border-slate-300 select-none flex-shrink-0 text-slate-700 font-semibold bg-[#f8f9fa] hover:bg-slate-200 transition-colors overflow-hidden", isActive && "bg-emerald-100 text-emerald-800")}
-                             style={{ width, height: headerRowH, fontSize: `${headerFontSize}px` }}
-                             onClick={() => onCellClick(getCellId(col, 0), false)}>
-                            {colChar}
-                            <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-emerald-500 z-10"
-                                 onMouseDown={(e) => startResize(e, 'col', col, width)} />
-                        </div>
+                        <Suspense 
+                            key={col}
+                            fallback={
+                                <div 
+                                    className="border-r border-slate-300 bg-[#f8f9fa] skeleton-shine"
+                                    style={{ width, height: headerRowH, flexShrink: 0 }} 
+                                />
+                            }
+                        >
+                            <ColumnHeader 
+                                col={col}
+                                width={width}
+                                height={headerRowH}
+                                colChar={colChar}
+                                isActive={isActive}
+                                fontSize={headerFontSize}
+                                onCellClick={onCellClick}
+                                startResize={startResize}
+                            />
+                        </Suspense>
                     )
                 })}
                 <div style={{ width: spacerRight, height: 1, flexShrink: 0 }} />

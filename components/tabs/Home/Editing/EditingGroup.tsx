@@ -1,11 +1,12 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { RibbonGroup, TabProps } from '../../shared';
 import AutoSum from './AutoSum';
 import SortFilter from './SortFilter';
 import FindSelect from './FindSelect';
 import ClearAll from './ClearAll';
 
-const EditingGroup: React.FC<TabProps> = ({ onClear, onAutoSum }) => {
+const EditingGroup: React.FC<TabProps> = memo(({ onClear, onAutoSum }) => {
   return (
     <RibbonGroup label="Editing" className="border-r-0">
         <div className="flex gap-2 h-full items-center px-1">
@@ -20,6 +21,6 @@ const EditingGroup: React.FC<TabProps> = ({ onClear, onAutoSum }) => {
         </div>
     </RibbonGroup>
   );
-};
+});
 
 export default EditingGroup;

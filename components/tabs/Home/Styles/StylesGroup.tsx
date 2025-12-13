@@ -1,10 +1,11 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { RibbonGroup, TabProps } from '../../shared';
 import ConditionalFormatting from './ConditionalFormatting';
 import FormatAsTable from './FormatAsTable';
 import CellStyles from './CellStyles';
 
-const StylesGroup: React.FC<TabProps> = () => {
+const StylesGroup: React.FC<TabProps> = memo(() => {
   return (
     <RibbonGroup label="Styles">
         <div className="flex gap-1 h-full items-center">
@@ -14,6 +15,6 @@ const StylesGroup: React.FC<TabProps> = () => {
         </div>
     </RibbonGroup>
   );
-};
+});
 
 export default StylesGroup;

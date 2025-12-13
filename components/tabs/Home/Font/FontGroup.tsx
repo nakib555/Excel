@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { RibbonGroup, Separator, TabProps } from '../../shared';
 import FontSelector from './FontSelector';
 import FontSizeSelector from './FontSizeSelector';
@@ -11,7 +12,7 @@ import Borders from './Borders';
 import FillColor from './FillColor';
 import FontColor from './FontColor';
 
-const FontGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => {
+const FontGroup: React.FC<TabProps> = memo(({ currentStyle, onToggleStyle }) => {
   return (
     <RibbonGroup label="Font" className="px-3">
         <div className="flex flex-col gap-1 justify-center h-full py-0.5">
@@ -36,6 +37,6 @@ const FontGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => {
         </div>
     </RibbonGroup>
   );
-};
+});
 
 export default FontGroup;

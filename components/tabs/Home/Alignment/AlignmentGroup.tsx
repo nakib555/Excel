@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { RibbonGroup, Separator, TabProps } from '../../shared';
 import TopAlign from './TopAlign';
 import MiddleAlign from './MiddleAlign';
@@ -12,7 +13,7 @@ import IncreaseIndent from './IncreaseIndent';
 import WrapText from './WrapText';
 import MergeCenter from './MergeCenter';
 
-const AlignmentGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => {
+const AlignmentGroup: React.FC<TabProps> = memo(({ currentStyle, onToggleStyle }) => {
   return (
     <RibbonGroup label="Alignment">
         <div className="flex gap-2 h-full py-0.5">
@@ -40,6 +41,6 @@ const AlignmentGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => 
         </div>
     </RibbonGroup>
   );
-};
+});
 
 export default AlignmentGroup;

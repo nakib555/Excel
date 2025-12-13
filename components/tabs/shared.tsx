@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, memo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { CellStyle } from '../../types';
 
@@ -18,7 +18,7 @@ export interface TabProps {
   onSort?: (direction: 'asc' | 'desc') => void;
 }
 
-export const DraggableScrollContainer = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => {
+export const DraggableScrollContainer = memo(({ children, className = "" }: { children?: React.ReactNode, className?: string }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isDown, setIsDown] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -91,16 +91,16 @@ export const DraggableScrollContainer = ({ children, className = "" }: { childre
       {children}
     </div>
   );
-};
+});
 
-export const RibbonGroup: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className = "" }) => (
+export const RibbonGroup: React.FC<{ label: string; children: React.ReactNode; className?: string }> = memo(({ label, children, className = "" }) => (
   <div className={`flex flex-col h-full px-1.5 border-r border-slate-200 last:border-r-0 flex-shrink-0 ${className}`}>
     <div className="flex-1 flex gap-1 items-center justify-center min-h-0">
        {children}
     </div>
     <div className="h-[18px] flex items-center justify-center text-[10px] text-slate-400 font-medium whitespace-nowrap pb-1">{label}</div>
   </div>
-);
+));
 
 interface RibbonButtonProps {
   icon: React.ReactNode;
@@ -115,7 +115,7 @@ interface RibbonButtonProps {
   disabled?: boolean;
 }
 
-export const RibbonButton: React.FC<RibbonButtonProps> = ({ 
+export const RibbonButton: React.FC<RibbonButtonProps> = memo(({ 
   icon, label, subLabel, onClick, active, variant = 'small', hasDropdown, className = "", title, disabled 
 }) => {
   const baseClass = `flex items-center justify-center rounded-[4px] transition-all duration-150 select-none ${
@@ -170,7 +170,7 @@ export const RibbonButton: React.FC<RibbonButtonProps> = ({
       {hasDropdown && <ChevronDown size={8} className="absolute bottom-0.5 right-0.5 opacity-60 stroke-[3]" />}
     </button>
   );
-};
+});
 
 export const ColorPicker: React.FC<{ 
     icon: React.ReactNode; 
@@ -178,7 +178,7 @@ export const ColorPicker: React.FC<{
     onChange: (c: string) => void;
     colors: string[];
     title: string;
-}> = ({ icon, color, onChange, colors, title }) => {
+}> = memo(({ icon, color, onChange, colors, title }) => {
     // Style the inner icon before wrapping
     const styledIcon = React.isValidElement(icon) 
         ? React.cloneElement(icon as React.ReactElement<any>, { size: 16, strokeWidth: 2 }) 
@@ -217,6 +217,6 @@ export const ColorPicker: React.FC<{
             </div>
         </div>
     )
-}
+});
 
-export const Separator = () => <div className="h-4/5 w-[1px] bg-slate-200 mx-1 flex-shrink-0 my-auto" />;
+export const Separator = memo(() => <div className="h-4/5 w-[1px] bg-slate-200 mx-1 flex-shrink-0 my-auto" />);

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { TabProps } from '../../shared';
 
 const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72];
@@ -25,4 +26,4 @@ const FontSizeSelector: React.FC<FontSizeSelectorProps> = ({ currentStyle, onTog
     );
 };
 
-export default FontSizeSelector;
+export default memo(FontSizeSelector);

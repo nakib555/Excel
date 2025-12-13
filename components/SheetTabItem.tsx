@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 
 interface SheetTabItemProps {
@@ -27,4 +28,4 @@ const SheetTabItem = ({ id, name, isActive, onClick }: SheetTabItemProps) => {
     );
 };
 
-export default SheetTabItem;
+export default memo(SheetTabItem);

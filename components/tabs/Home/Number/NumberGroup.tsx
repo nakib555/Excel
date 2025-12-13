@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { RibbonGroup, TabProps } from '../../shared';
 import NumberFormatSelector from './NumberFormatSelector';
 import Currency from './Currency';
@@ -8,7 +8,7 @@ import CommaStyle from './CommaStyle';
 import IncreaseDecimal from './IncreaseDecimal';
 import DecreaseDecimal from './DecreaseDecimal';
 
-const NumberGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => {
+const NumberGroup: React.FC<TabProps> = memo(({ currentStyle, onToggleStyle }) => {
   return (
     <RibbonGroup label="Number">
         <div className="flex flex-col gap-1 justify-center h-full py-0.5">
@@ -27,6 +27,6 @@ const NumberGroup: React.FC<TabProps> = ({ currentStyle, onToggleStyle }) => {
         </div>
     </RibbonGroup>
   );
-};
+});
 
 export default NumberGroup;
