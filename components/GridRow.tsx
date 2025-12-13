@@ -1,8 +1,8 @@
+
 import React, { memo, Suspense, lazy } from 'react';
 import { getCellId, parseCellId, cn } from '../utils';
 import { NavigationDirection } from './Cell';
 
-// Lazy load Cell to support granular loading during rapid expansion/scrolling
 const Cell = lazy(() => import('./Cell'));
 
 interface GridRowProps {
@@ -14,7 +14,7 @@ interface GridRowProps {
   getColW: (i: number) => number;
   cells: any;
   activeCell: string | null;
-  selectionRange: string[] | null;
+  selectionBounds: { minRow: number, maxRow: number, minCol: number, maxCol: number } | null;
   scale: number;
   onCellClick: (id: string, isShift: boolean) => void;
   handleMouseDown: (id: string, isShift: boolean) => void;
@@ -37,7 +37,7 @@ const GridRow = memo(({
     getColW, 
     cells, 
     activeCell, 
-    selectionRange, 
+    selectionBounds, 
     scale, 
     onCellClick, 
     handleMouseDown, 
@@ -51,11 +51,22 @@ const GridRow = memo(({
     bgPatternStyle
 }: GridRowProps) => {
     const isActiveRow = activeCell && parseInt(activeCell.replace(/[A-Z]+/, '')) === rowIdx + 1;
-    // Calculate dynamic font size based on zoom, capped for readability
     const headerFontSize = Math.max(7, 12 * scale);
     
+    // Quick row-level check to avoid column loops if row not involved in selection
+    const isRowSelected = selectionBounds 
+        ? (rowIdx >= selectionBounds.minRow && rowIdx <= selectionBounds.maxRow)
+        : false;
+
     return (
-        <div className="flex" style={{ width: 'max-content', height }}>
+        <div 
+            className="flex" 
+            style={{ 
+                width: 'max-content', 
+                height,
+                contain: 'layout style' // Performance: Isolate layout reflows
+            }}
+        >
             {/* Row Header */}
             <div 
                 className={cn(
@@ -72,7 +83,7 @@ const GridRow = memo(({
                 />
             </div>
 
-            {/* Spacer Left with Pattern */}
+            {/* Spacer Left */}
             <div style={{ width: spacerLeft, height: '100%', flexShrink: 0, ...bgPatternStyle }} />
             
             {/* Cells Loop */}
@@ -80,7 +91,11 @@ const GridRow = memo(({
                 const id = getCellId(col, rowIdx);
                 const data = cells[id] || { id, raw: '', value: '', style: {} };
                 const isSelected = activeCell === id;
-                const isInRange = selectionRange ? selectionRange.includes(id) : false;
+                // O(1) Check using bounds
+                const isInRange = isRowSelected && selectionBounds 
+                    ? (col >= selectionBounds.minCol && col <= selectionBounds.maxCol)
+                    : false;
+                
                 const width = getColW(col);
                 
                 return (
@@ -113,7 +128,7 @@ const GridRow = memo(({
                 );
             })}
 
-            {/* Spacer Right with Pattern */}
+            {/* Spacer Right */}
             <div style={{ width: spacerRight, height: '100%', flexShrink: 0, ...bgPatternStyle }} />
         </div>
     );
@@ -126,38 +141,38 @@ const GridRow = memo(({
     if (prev.headerColW !== next.headerColW) return false;
     if (prev.spacerLeft !== next.spacerLeft) return false;
     if (prev.spacerRight !== next.spacerRight) return false;
-
-    // 2. Data Check (Medium)
     if (prev.cells !== next.cells) return false;
 
-    // 3. Selection / Interaction Check (Crucial for scroll/selection perf)
-    if (prev.activeCell !== next.activeCell || prev.selectionRange !== next.selectionRange) {
+    // 2. Active Cell Check
+    const isRowInvolvedActive = (id: string | null, rowIdx: number) => {
+        if (!id) return false;
+        const p = parseCellId(id);
+        return p ? p.row === rowIdx : false;
+    };
+    
+    const prevActive = isRowInvolvedActive(prev.activeCell, prev.rowIdx);
+    const nextActive = isRowInvolvedActive(next.activeCell, next.rowIdx);
+    
+    if (prevActive !== nextActive) return false;
+    if (prevActive && nextActive && prev.activeCell !== next.activeCell) return false;
+
+    // 3. Selection Check (Optimized using Bounds equality)
+    const b1 = prev.selectionBounds;
+    const b2 = next.selectionBounds;
+    
+    // If exact same object or both null, equal
+    if (b1 === b2) return true;
+    if (!b1 || !b2) return false; // One is null, one isn't
+    
+    // Deep comparison of bounds
+    if (b1.minRow !== b2.minRow || b1.maxRow !== b2.maxRow || b1.minCol !== b2.minCol || b1.maxCol !== b2.maxCol) {
+        // Bounds changed. Does it affect THIS row?
+        // If the row was inside the old bounds OR is inside the new bounds, we must re-render.
+        const row = prev.rowIdx;
+        const wasIn = row >= b1.minRow && row <= b1.maxRow;
+        const isIn = row >= b2.minRow && row <= b2.maxRow;
         
-        // Helper to check if a row index is involved in a cell ID or range
-        const isRowInvolved = (id: string | null) => {
-            if (!id) return false;
-            const p = parseCellId(id);
-            return p ? p.row === prev.rowIdx : false;
-        };
-
-        const isRangeInvolved = (range: string[] | null) => {
-            if (!range) return false;
-            return range.some(id => parseCellId(id)?.row === prev.rowIdx);
-        };
-
-        const prevActiveInRow = isRowInvolved(prev.activeCell);
-        const nextActiveInRow = isRowInvolved(next.activeCell);
-        
-        if (prevActiveInRow !== nextActiveInRow) return false;
-        if (prevActiveInRow && nextActiveInRow && prev.activeCell !== next.activeCell) return false;
-
-        const prevRangeInRow = isRangeInvolved(prev.selectionRange);
-        const nextRangeInRow = isRangeInvolved(next.selectionRange);
-
-        if (prevRangeInRow !== nextRangeInRow) return false;
-        if ((prevRangeInRow || nextRangeInRow) && prev.selectionRange !== next.selectionRange) return false;
-
-        return true;
+        if (wasIn || isIn) return false;
     }
 
     return true; 

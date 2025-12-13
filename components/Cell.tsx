@@ -70,23 +70,20 @@ const Cell = memo(({
   };
 
   // --- LOD (Level of Detail) Optimization ---
-  const isMicroView = scale < 0.25; // Only hide content if extremely small
-  // Allow font size to scale linearly down to 7px, then clamp
+  const isMicroView = scale < 0.25; 
   const fontSize = Math.max(scale < 0.6 ? 7 : 9, (data.style.fontSize || 13) * scale);
 
-  // Style Calculation - Optimized
+  // Style Calculation - Optimized with strict containment
   const style: React.CSSProperties = {
     width: width,
     height: height,
     minWidth: width,
     minHeight: height,
-    // Performance: content-visibility helps browser skip rendering off-screen work even if DOM exists
     contentVisibility: 'auto',
     contain: 'strict', 
   };
   
-  // Ghost Mode: Render minimal DOM for performance during fast interactions
-  // Updated with brighter full-box shimmer effect
+  // Ghost Mode
   if (isGhost) {
       return (
         <div
@@ -96,7 +93,6 @@ const Cell = memo(({
       );
   }
 
-  // Active styles calculation
   const textAlign = data.style.align || 'left';
   const fontWeight = data.style.bold ? '600' : '400';
   const fontStyle = data.style.italic ? 'italic' : 'normal';
@@ -105,14 +101,12 @@ const Cell = memo(({
   const backgroundColor = data.style.bg || (isInRange ? 'rgba(16, 185, 129, 0.1)' : '#fff');
   const whiteSpace = data.style.wrapText ? 'normal' : 'nowrap';
   
-  // Display Value Formatting
   const displayValue = formatCellValue(data.value, data.style);
 
   return (
     <div
       className={cn(
         "relative box-border flex items-center px-[4px] overflow-hidden select-none outline-none flex-shrink-0 border-r border-b border-slate-200",
-        // Conditional classes for selection borders to avoid extra DOM nodes for borders
         isActive && "z-20",
         isSelected && !isActive && "z-10" 
       )}
@@ -125,7 +119,7 @@ const Cell = memo(({
           color,
           backgroundColor,
           fontSize: isMicroView ? 0 : `${fontSize}px`,
-          lineHeight: 1, // Ensure text is centered vertically without gap
+          lineHeight: 1, 
           whiteSpace
       }}
       onMouseDown={(e) => onMouseDown(id, e.shiftKey)}
@@ -154,10 +148,8 @@ const Cell = memo(({
         )
       )}
 
-      {/* Selection Overlay - Only render if selected to save DOM */}
       {isSelected && (
         <div className="absolute inset-0 pointer-events-none border-[2px] border-primary-500 shadow-glow mix-blend-multiply rounded-[1px]">
-             {/* Fill handle only for active cell */}
              {isActive && (
                 <div 
                     className="absolute -bottom-[4px] -right-[4px] bg-primary-500 border border-white cursor-crosshair rounded-[1px] shadow-sm z-50 pointer-events-auto" 
@@ -169,7 +161,6 @@ const Cell = memo(({
     </div>
   );
 }, (prev, next) => {
-  // Enhanced comparison
   return (
     prev.data === next.data &&
     prev.isSelected === next.isSelected &&
