@@ -29,9 +29,9 @@ const MAX_COLS = 16384;
 const INITIAL_ROWS = 100; 
 const INITIAL_COLS = 26;  // A-Z
 
-// --- UPDATED BATCH RATES (User Request: 30) ---
-const EXPANSION_BATCH_ROWS = 30; // Generate 30 rows at a time
-const EXPANSION_BATCH_COLS = 30; // Generate 30 cols at a time
+// --- UPDATED BATCH RATES (User Request: 80) ---
+const EXPANSION_BATCH_ROWS = 80; // Generate 80 rows at a time
+const EXPANSION_BATCH_COLS = 80; // Generate 80 cols at a time
 
 /**
  * 1️⃣ SPARSE DATA GENERATION
@@ -307,7 +307,7 @@ const App: React.FC = () => {
    * We treat the grid as potentially infinite. We only increase the coordinate bounds
    * when the user hits the edge, creating the illusion of infinite space up to MAX_ROWS.
    * 
-   * Update: Generates cells in batches of 30.
+   * Update: Generates cells in batches of 80.
    */
   const handleExpandGrid = useCallback((direction: 'row' | 'col') => {
     setGridSize(prev => {
