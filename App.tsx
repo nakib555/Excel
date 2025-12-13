@@ -290,70 +290,6 @@ const App: React.FC = () => {
     });
   }, []);
 
-  /**
-   * 4️⃣ GARBAGE COLLECTION (TRIM LOGIC)
-   * "Excel actively releases off-screen objects."
-   * This function runs after fast scrolling stops. It:
-   * 1. Calculates the "UsedRange" (bounding box of actual data).
-   * 2. Adds a comfortable "Buffer" around it.
-   * 3. Shrinks the `gridSize` to this bound to keep scrollbars accurate and prevent "infinite empty scroll".
-   * 4. Scans for any stale empty objects in memory and deletes them (State GC).
-   */
-  const handleTrimGrid = useCallback(() => {
-    let maxRow = 0;
-    let maxCol = 0;
-    
-    // O(UsedCells) scan - fast because of sparse storage
-    const ids = Object.keys(cells);
-    const hasData = ids.length > 0;
-    
-    if (hasData) {
-        for (const id of ids) {
-             const { row, col } = parseCellId(id) || { row: 0, col: 0 };
-             if (row > maxRow) maxRow = row;
-             if (col > maxCol) maxCol = col;
-        }
-    }
-    
-    // Ensure active selection is included in bounds
-    if (activeCell) {
-         const { row, col } = parseCellId(activeCell) || { row: 0, col: 0 };
-         if (row > maxRow) maxRow = row;
-         if (col > maxCol) maxCol = col;
-    }
-
-    // "Buffer Zone" - Keep ~20 rows/cols of empty space for breathing room
-    // This matches Excel's behavior where the scroll thumb shrinks as you add data down.
-    const BUFFER = 20; 
-    const newRows = Math.max(INITIAL_ROWS, maxRow + 1 + BUFFER);
-    const newCols = Math.max(INITIAL_COLS, maxCol + 1 + BUFFER);
-
-    // Only update if difference is significant to avoid thrashing
-    setGridSize(prev => {
-        if (Math.abs(prev.rows - newRows) > 5 || Math.abs(prev.cols - newCols) > 5) {
-             return { rows: newRows, cols: newCols };
-        }
-        return prev;
-    });
-    
-    // Garbage Collect: Remove totally empty cells from state that might have been left behind
-    // (e.g., cleared content but object remained)
-    setSheets(prev => prev.map(sheet => {
-        if (sheet.id !== activeSheetId) return sheet;
-        const newCells = { ...sheet.cells };
-        let dirty = false;
-        Object.keys(newCells).forEach(key => {
-            const cell = newCells[key];
-            if (!cell.raw && (!cell.style || Object.keys(cell.style).length === 0)) {
-                delete newCells[key];
-                dirty = true;
-            }
-        });
-        return dirty ? { ...sheet, cells: newCells } : sheet;
-    }));
-
-  }, [cells, activeCell, activeSheetId]);
-
   const handleExport = useCallback(() => {
     const rows = [];
     for(let r=0; r<Math.min(gridSize.rows, 1000); r++) { 
@@ -537,7 +473,6 @@ const App: React.FC = () => {
                 onColumnResize={handleColumnResize}
                 onRowResize={handleRowResize}
                 onExpandGrid={handleExpandGrid}
-                onTrimGrid={handleTrimGrid}
                 onZoom={handleZoomWheel}
               />
           </Suspense>

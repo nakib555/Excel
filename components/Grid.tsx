@@ -39,7 +39,6 @@ interface GridProps {
   onColumnResize: (id: string, width: number) => void;
   onRowResize: (rowIdx: number, height: number) => void;
   onExpandGrid: (direction: 'row' | 'col') => void;
-  onTrimGrid?: () => void;
   onZoom: (delta: number) => void;
 }
 
@@ -59,7 +58,6 @@ const Grid: React.FC<GridProps> = ({
   onColumnResize,
   onRowResize,
   onExpandGrid,
-  onTrimGrid,
   onZoom
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +74,6 @@ const Grid: React.FC<GridProps> = ({
   const touchStartDist = useRef<number>(0);
   const rafRef = useRef<number | null>(null);
   const scrollTimeoutRef = useRef<any>(null);
-  const trimTimeoutRef = useRef<any>(null);
   
   // Virtualization State
   const [scrollState, setScrollState] = useState({ 
@@ -276,15 +273,7 @@ const Grid: React.FC<GridProps> = ({
     
     scrollTimeoutRef.current = setTimeout(() => {
         setIsScrollingFast(false);
-        
-        // 2. Trigger Trim Logic (Garbage Collection of Empty Space)
-        // This offloads "Conceptual Cells" that are far outside the viewport
-        if (onTrimGrid) {
-            if (trimTimeoutRef.current) clearTimeout(trimTimeoutRef.current);
-            trimTimeoutRef.current = setTimeout(() => {
-                onTrimGrid();
-            }, 500); // Wait a bit after scroll stops
-        }
+        // Trim logic removed
     }, 150);
 
     checkExpansion();
@@ -298,7 +287,7 @@ const Grid: React.FC<GridProps> = ({
             clientWidth: element.clientWidth 
         });
     });
-  }, [checkExpansion, onTrimGrid]);
+  }, [checkExpansion]);
 
   // --- 5. EVENT HANDLERS ---
   const handleMouseDown = useCallback((id: string, isShift: boolean) => {
