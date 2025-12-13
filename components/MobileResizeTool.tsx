@@ -21,7 +21,7 @@ const MobileResizeTool: React.FC<MobileResizeToolProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-14 left-4 right-4 md:hidden z-[100] animate-in slide-in-from-bottom-5 fade-in duration-200">
+    <div className="fixed bottom-14 left-4 right-4 md:hidden z-[1000] animate-in slide-in-from-bottom-5 fade-in duration-200">
       <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-2xl rounded-xl p-4 flex flex-col gap-4">
         
         {/* Header */}
